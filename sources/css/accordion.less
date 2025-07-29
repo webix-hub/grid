@@ -1,0 +1,55 @@
+@accordionLeftMargin: (@barHeight - 6)/2;
+@accordionTopMargin: (@barHeight - 8)/2;
+
+.accIconUp(){
+	background-image:data-uri('../images/@{skin}/up.png');
+	background-repeat:no-repeat;
+}
+
+.accIconDown(){
+	background-image:data-uri('../images/@{skin}/down.png');
+	background-repeat:no-repeat;
+}
+
+.accIconLeft(){
+	background-image:data-uri('../images/@{skin}/left.png');
+	background-repeat:no-repeat;
+}
+
+.accIconRight(){
+	background-image:data-uri('../images/@{skin}/right.png');
+	background-repeat:no-repeat;
+}
+
+.webix_accordionitem_body{
+	position:relative;
+}
+
+.webix_accordionitem_body>div{
+   border-width:0px!important;
+}
+
+.webix_accordionitem_header{
+	border-bottom: 1px solid @borderColor;
+	position:relative; z-index:2;
+	
+	.layoutBarFont;
+	.layoutBarBG;
+
+	line-height: (@barHeight - 2);
+	cursor:pointer;
+	overflow:hidden;
+}
+
+.webix_accordionitem_label{
+	height:100%;
+	padding-left: 10px;
+}
+
+.webix_accordionitem_button{
+	float:right;
+	position:relative;
+	height:11px;
+	width:11px;
+	margin: @accordionTopMargin+1 @accordionLeftMargin;
+}

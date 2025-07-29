@@ -1,0 +1,6 @@
+Check the full list of changes at https://grid.webix.com/docs/
+
+Version 11.1 (July 2025)
+=============================
+
+Initial release

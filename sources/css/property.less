@@ -1,0 +1,47 @@
+.webix_property_line{
+	width: 100%;
+	height: auto;
+	line-height: 0;
+}
+.webix_property_line.webix_focused,
+.webix_property_line:focus{
+	& > div{
+		background-color: lighten(@selectColor, 1%);
+	}
+}
+.webix_property_label, .webix_property_value{
+	display: inline-block;
+	padding-left: @dataPadding;
+	border-bottom: 1px solid @dataBorderColor;
+	overflow: hidden;
+	#box > .sizing;
+}
+.webix_property_label{
+	border-right:1px solid @dataBorderColor;
+}
+.webix_property_label_line{
+	.webix_common_header;
+	padding-left: @dataPadding;
+	border-bottom: 1px solid @dataBorderColor;
+	#box > .sizing;
+}
+
+.webix_property_col_ind{
+	float: right;
+	cursor: pointer;
+	margin: 0 8px 0 0;
+	border: 1px solid @borderColor;
+	background: #ffffff;
+	border-radius: 3px;
+	width: 16px;
+	height: 16px;
+}
+
+.webix_property_value {
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.webix_property_check{
+	margin: 0;
+	vertical-align: middle;
+}

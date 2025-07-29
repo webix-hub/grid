@@ -1,0 +1,28 @@
+#border{
+	.corners(@lefttop:0px, @righttop: 0px, @bottomright: 0px, @leftbottom: 0px){
+		border-top-left-radius: @lefttop;
+		border-bottom-left-radius: @leftbottom;
+		border-top-right-radius: @righttop;
+		border-bottom-right-radius: @bottomright;
+	};
+};
+
+#box {
+	.sizing( @type:border-box ){
+		-moz-box-sizing: @type;
+		-webkit-box-sizing: @type;
+		box-sizing: @type;
+	};
+	.noselect(){
+		-moz-user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+		user-select:none;
+	};
+	.select(){
+		-moz-user-select: text;
+		-webkit-user-select: text;
+		-ms-user-select: text;
+		user-select: text;
+	}
+};
