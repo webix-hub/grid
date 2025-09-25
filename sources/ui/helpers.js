@@ -61,6 +61,11 @@ export function zIndex(index){
 	return env.zIndexBase++;
 }
 
+export function appendCssClass(css = "", className) {
+	if (!css.includes(className)) css += ` ${className}`;
+	return css;
+}
+
 event(window, "resize", function() {
 	// check for virtual keyboard
 	if(env.touch && ( state._edit_open_time && (new Date())-state._edit_open_time < 1000 || state._focus_time && (new Date())-state._focus_time < 1000)){

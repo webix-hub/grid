@@ -9,6 +9,8 @@ import {extend, isArray, uid} from "../../webix/helpers";
 import {$$} from "../../ui/core";
 import {assert} from "../../webix/debug";
 
+import xlfnReplacements from "./newExcelFunctions";
+
 export const toExcel = function(id, options){
 	options = options || {};
 	options.export_mode = "excel";
@@ -161,8 +163,7 @@ function getExcelData(data, scheme, spans, styles, freeze, sheetSettings, option
 			if(isFormula){
 				if(cell.v.ref)
 					cell.F = cell.v.ref;
-
-				cell.f = cell.v.formula.substring(1);
+				cell.f = addXlfnPrefix(cell.v.formula.substring(1));
 				cell.v = stringValue;
 			}
 
@@ -325,4 +326,17 @@ function getColumnsWidths(scheme){
 	}
 
 	return wscols;
+}
+
+const xlfnRegex = new RegExp(
+	`(^|[+\\-*/(=:,])(${Object.keys(xlfnReplacements)
+		.map(func => func.replace(/\./g, "\\."))
+		.join("|")})(?=\\s*\\()`,
+	"g"
+);
+
+function addXlfnPrefix(formula) {
+	return formula.replace(xlfnRegex, (match, prefix, name) => {
+		return prefix + xlfnReplacements[name];
+	});
 }

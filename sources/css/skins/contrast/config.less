@@ -327,6 +327,12 @@
 @dataHeaderBgColor: @alterColor;
 @selectBorderColor: @dataBorderColor;
 @selectFontColor: #FFFFFF;
+// datatable filters
+@filterPadding: 0px 5px;
+@divFilterPadding: 3px 5px;
+@resizerFilterPadding: 0px 8px;
+@resizerDivFilterPadding: 3px 8px;
+
 .selectLine(){
 	color: @selectFontColor;
 	background: @selectColor;
@@ -368,12 +374,6 @@
 	}
 	.webix_hs_right .webix_hcell.webix_first {
 		border-left: @dataHeaderBordersStyle;
-	}
-	.webix_hcell.webix_ss_filter {
-		padding: 0px 5px;
-	}
-	.webix_hcell.webix_div_filter {
-		padding: 3px 5px;
 	}
 
 	.webix_ss_filter select, .webix_ss_filter input{

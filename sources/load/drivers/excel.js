@@ -47,7 +47,7 @@ const excel = extend({
 			/* global XLS, XLSX */
 			const wb = (ext == "xls" ? XLS : XLSX).read(arr.join(""), {
 				type: "binary",
-				cellStyles: true,
+				cellStyles: isUndefined(options.cellStyles) ? true : options.cellStyles,
 				cellDates: isUndefined(options.cellDates) ? true : options.cellDates,
 				sheetStubs: options.sheetStubs
 			});

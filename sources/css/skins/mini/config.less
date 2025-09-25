@@ -584,6 +584,11 @@
 @dataHeaderBgColor: @accentBg;
 @selectBorderColor: @dataBorderColor;
 @selectFontColor: @fontColor;
+// datatable filters
+@filterPadding: 0px 4px;
+@divFilterPadding: 1px 4px;
+@resizerFilterPadding: 0px 8px;
+@resizerDivFilterPadding: 1px 8px;
 
 .dataHeaderFont{
 	.fontStyle(@fontSize, @boldStyle, @altFontColor, 0);
@@ -650,12 +655,6 @@
 	}
 	.webix_hs_left .webix_hcell.webix_last{
 		border-right: @dataHeaderBordersStyle;
-	}
-	.webix_hcell.webix_ss_filter {
-		padding: 0px 4px;
-	}
-	.webix_hcell.webix_div_filter {
-		padding: 1px 4px;
 	}
 	.webix_dtable_subview{
 		background: @backColor;

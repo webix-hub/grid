@@ -58,7 +58,7 @@ export function copy(source, origin, allowViewRefs){
 
 	for (let method in source){
 		const from = source[method];
-		if(from && typeof from == "object" && !(from instanceof RegExp)){		
+		if(from && typeof from == "object" && !(from instanceof RegExp)){	
 			const viewInstance = !!from._settings && !!from.$init && !!from.define;
 			if (isDate(from))
 				target[method] = new Date(from);
@@ -74,7 +74,12 @@ export function copy(source, origin, allowViewRefs){
 			}
 			/* jshint ignore:end */
 			else {
-				target[method] = (isArray(from)?[]:{});
+				if (from instanceof HTMLElement) {
+					target[method] = from;
+					continue;
+				}
+				
+				target[method] = isArray(from) ? [] : {};
 				copy(target[method], from, allowViewRefs);
 			}
 		} else {

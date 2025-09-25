@@ -5,7 +5,7 @@ import {$$} from "../ui/core";
 import i18n from "../webix/i18n";
 import {_event} from "../webix/htmlevents";
 import wDate from "../core/date";
-
+import {appendCssClass} from "./helpers";
 
 const datafilter = {
 	textWaitDelay:500,
@@ -75,7 +75,7 @@ const datafilter = {
 		},
 		render:function(master, config){
 			if (this.init) this.init(config);
-			config.css = (config.css||"") + " webix_ss_filter";
+			config.css = appendCssClass(config.css, "webix_ss_filter");
 			return "<input "+(config.placeholder?("placeholder=\""+config.placeholder+"\" "):"")+"type='text'>"; 
 		},
 		_on_key_down:function(e){
@@ -131,7 +131,7 @@ const datafilter = {
 		},
 		render:function(master, config){
 			if (this.init) this.init(config);
-			config.css = (config.css||"") + " webix_ss_filter";
+			config.css = appendCssClass(config.css, "webix_ss_filter");
 			return "";
 		},
 		_on_change:function(){ 

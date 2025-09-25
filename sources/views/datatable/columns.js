@@ -1,5 +1,6 @@
 import {_to_array, _power_array, isUndefined, copy} from "../../webix/helpers";
 import {assert} from "../../webix/debug";
+import {$$} from "../../ui/core";
 
 const Mixin = {
 	$init:function(){
@@ -365,8 +366,47 @@ const Mixin = {
 			}
 		}
 	},
+	_shouldKeepView(view, columns) {
+		const viewId = view.config.id;
+		
+		// protected views (headermenu, subviews) should not be removed
+		if (viewId === this._settings.headermenu || 
+			(this._subViewStorage && this._subViewStorage[viewId])) {
+			return true;
+		}
+		
+		for (const column of columns) {
+			if (column.header && typeof column.header !== "string") {
+				for (const item of column.header) {
+					if (this._headerItemReferencesView(item, viewId)) return true;
+				}
+			}
+			
+			if (column.footer && typeof column.footer !== "string") {
+				for (const item of column.footer) {
+					if (this._headerItemReferencesView(item, viewId)) return true;
+				}
+			}
+		}
+		
+		return false;
+	},
+	_headerItemReferencesView(item, viewId) {
+		if (!item) return false;
+		// data collections
+		if (item.options && item.options.config && item.options.config.id === viewId) return true;
+		// richselectFilter and excelFilter contain references to views
+		const view = item.richselect ? $$(item.richselect) : item.filter ? $$(item.filter) : null;
+		
+		return view && view.config && view.config.id === viewId;
+	},
 	refreshColumns:function(columns){
-		if (columns) columns = copy(columns, null, true);
+		if (columns) {
+			columns = copy(columns, null, true);
+			// clean up the config before using it (we may be reusing a previously initialized config to some extent)
+			this._clean_config_struct(columns);
+		}
+
 		const columnsUpdated = (this._columns.length !== 0 && this._settings.columns !== this._columns) || !!columns;
 
 		this._dtable_column_refresh = true;
@@ -374,9 +414,7 @@ const Mixin = {
 		if (columnsUpdated) {
 			if (this._destroy_with_me.length) {
 				this._destroy_with_me = this._destroy_with_me.filter(view => {
-					// remove filters/collections from the previous column config, don't touch other views
-					if (view.config.id === this._settings.headermenu || 
-						(this._subViewStorage && this._subViewStorage[view.config.id])) return true;
+					if (this._shouldKeepView(view, columns)) return true;
 					view.destructor();
 					return false;
 				});

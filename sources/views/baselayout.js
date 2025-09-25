@@ -480,10 +480,10 @@ const api = {
 	},
 	_set_child_size_a:function(sizes, min, max){
 		min = sizes[min]; max = sizes[max];
-		var height = min;
+		let height = min;
 
 		if (min != max){
-			var ps = this._set_size_delta * sizes[4]/this._set_size_gravity;
+			const ps = this._set_size_delta * sizes[4]/this._set_size_gravity;
 			if (ps < min){
 				height = min;
 				this._set_size_gravity -= sizes[4]; 
@@ -580,13 +580,13 @@ const api = {
 		this._set_size_gravity = this._master_size[2];
 		let width = x; let height = y;
 
-		var auto = [];
+		const auto = [];
 		for (let i=0; i < this._cells.length; i++){
 			//ignore hidden cells
 			if (this._cells[i]._settings.hidden || !this._sizes[i])
 				continue;
 
-			let sizes = this._sizes[i];
+			const sizes = this._sizes[i];
 
 			if (this._vertical_orientation){
 				height = this._set_child_size_a(sizes,2,3);
@@ -598,24 +598,43 @@ const api = {
 			this._cells[i].$setSize(width,height);
 		}
 
+		const newSizes = [];
+		const dIndex = this._vertical_orientation ? 1 : 0;
+		const maxSizeIndex = this._vertical_orientation ? 3 : 1;
+		let maxSizeDelta = 0;
 		for (let i = 0; i < auto.length; i++){
-			var index = auto[i].oldIndex;
-			let sizes = this._sizes[index];
-			var dx = Math.round(this._set_size_delta * sizes[4]/this._set_size_gravity);
+			const index = auto[i].oldIndex;
+			const sizes = this._sizes[index];
+			const dx = Math.round(this._set_size_delta * sizes[4]/this._set_size_gravity);
 			this._set_size_delta -= dx; this._set_size_gravity -= sizes[4];
-			if (this._vertical_orientation)
-				height = sizes[3] > -1 ? Math.min(dx, sizes[3]) : dx;
-			else {
-				width = sizes[1] > -1 ? Math.min(dx, sizes[1]) : dx;
+			const size = [];
+			size[dIndex] = dx;
+			size[1 - dIndex] = dIndex ? width : height;
+			newSizes.push(size);
+			// check and apply size limit ( maxWidth / maxHeight )
+			const maxSize = sizes[maxSizeIndex];
+			if (maxSize > -1 && dx > maxSize ) {
+				maxSizeDelta += dx - maxSize;
+				size[dIndex] = maxSize;
 			}
-
-			auto[i].view.$setSize(width,height);
+		}
+		// increase size of a cell without a size limit by maxSizeDelta
+		for (let i = 0; i < auto.length && maxSizeDelta; i++) {
+			const index = auto[i].oldIndex;
+			const sizes = this._sizes[index];
+			if (sizes[maxSizeIndex] >  newSizes[i][dIndex] + maxSizeDelta) {
+				newSizes[i][dIndex] += maxSizeDelta;
+				maxSizeDelta = 0;
+			}
+		}
+		for (let i = 0; i < auto.length; i++){
+			auto[i].view.$setSize(newSizes[i][0],newSizes[i][1]);
 		}
 
 		state._child_sizing_active -= 1;
 	},
 	_next:function(obj, mode){
-		var index = this.index(obj);
+		const index = this.index(obj);
 		if (index == -1) return null;
 		return this._cells[index+mode];
 	}, 

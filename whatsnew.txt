@@ -1,4 +1,24 @@
-Check the full list of changes at https://grid.webix.com/docs/
+Check the full list of changes at https://grid.webix.com/docs/whats-new/
+
+Version 11.2 (September 2025)
+=============================
+
+### New features
+
+- New column resize mode, suitable for touch and hybrid devices
+
+### Fixes
+
+- Refreshing columns caused a call stack exception in certain cases
+- Tooltips for data items didn’t update with data
+- Typescript definitions: correct configuration for sort method
+
+Version 11.1.2 (August 2025)
+=============================
+
+### Fixes
+
+- Multicombo Filter: removing an option from the input before popup is opened caused an error
 
 Version 11.1 (July 2025)
 =============================

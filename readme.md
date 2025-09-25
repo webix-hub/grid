@@ -1,4 +1,4 @@
-Webix Grid v.11.1.1
+Webix Grid v.11.2.0
 ================
 
 [![npm version](https://badge.fury.io/js/webix-grid-gpl.svg)](https://badge.fury.io/js/webix-grid-gpl)

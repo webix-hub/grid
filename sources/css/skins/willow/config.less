@@ -326,6 +326,11 @@ div.webix_modal_cover{
 @dataHeaderBgColor: @spaceLayoutColor;
 @selectBorderColor: @dataBorderColor;
 @selectFontColor: @fontColor;
+// datatable filters
+@filterPadding: 0px 4px;
+@divFilterPadding: 1px 4px;
+@resizerFilterPadding: 0px 8px;
+@resizerDivFilterPadding: 1px 8px;
 
 .dataHeaderFont{
 	.fontStyle(@fontSize, @boldStyle, @altFontColor);
@@ -388,12 +393,6 @@ div.webix_modal_cover{
 	.webix_ss_right, .webix_hs_right{
 		z-index: 1;
 		box-shadow: 0px -4px 20px rgba(44, 47, 60, 0.12);
-	}
-	.webix_hcell.webix_ss_filter {
-		padding: 0px 4px;
-	}
-	.webix_hcell.webix_div_filter {
-		padding: 1px 4px;
 	}
 	.webix_dtable_subview{
 		background: @backColor;

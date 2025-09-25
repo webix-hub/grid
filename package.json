@@ -1,7 +1,7 @@
 {
   "name": "grid",
   "productTag": "grid",
-  "version": "11.1.1",
+  "version": "11.2.0",
   "description": "Javascript Grid for Web",
   "scripts": {
     "lint": "yarn eslint \"sources/**/*.js\"",

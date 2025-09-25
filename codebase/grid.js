@@ -1,6 +1,6 @@
 /**
  * @license
- * webix Grid v.11.1.1
+ * webix Grid v.11.2.0
  * This software is allowed to use under GPL or you need to obtain Commercial License
  * to use it in non-GPL project. Please contact sales@webix.com for details
  */
@@ -94,6 +94,63 @@
 
   function _nonIterableRest() {
     throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  }
+
+  function _createForOfIteratorHelper(o, allowArrayLike) {
+    var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
+
+    if (!it) {
+      if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") {
+        if (it) o = it;
+        var i = 0;
+
+        var F = function () {};
+
+        return {
+          s: F,
+          n: function () {
+            if (i >= o.length) return {
+              done: true
+            };
+            return {
+              done: false,
+              value: o[i++]
+            };
+          },
+          e: function (e) {
+            throw e;
+          },
+          f: F
+        };
+      }
+
+      throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }
+
+    var normalCompletion = true,
+        didErr = false,
+        err;
+    return {
+      s: function () {
+        it = it.call(o);
+      },
+      n: function () {
+        var step = it.next();
+        normalCompletion = step.done;
+        return step;
+      },
+      e: function (e) {
+        didErr = true;
+        err = e;
+      },
+      f: function () {
+        try {
+          if (!normalCompletion && it.return != null) it.return();
+        } finally {
+          if (didErr) throw err;
+        }
+      }
+    };
   }
 
   var global = window;
@@ -514,6 +571,11 @@
         }
         /* jshint ignore:end */
         else {
+          if (from instanceof HTMLElement) {
+            target[method] = from;
+            continue;
+          }
+
           target[method] = isArray(from) ? [] : {};
           copy(target[method], from, allowViewRefs);
         }
@@ -2146,7 +2208,7 @@
         /* global XLS, XLSX */
         var wb = (ext == "xls" ? XLS : XLSX).read(arr.join(""), {
           type: "binary",
-          cellStyles: true,
+          cellStyles: isUndefined(options.cellStyles) ? true : options.cellStyles,
           cellDates: isUndefined(options.cellDates) ? true : options.cellDates,
           sheetStubs: options.sheetStubs
         });
@@ -3526,6 +3588,12 @@
     }
 
     return env.zIndexBase++;
+  }
+  function appendCssClass() {
+    var css = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+    var className = arguments.length > 1 ? arguments[1] : undefined;
+    if (!css.includes(className)) css += " ".concat(className);
+    return css;
   }
   event$1(window, "resize", function () {
     // check for virtual keyboard
@@ -5666,6 +5734,8 @@
       };
     },
     _init_tooltip_once: function () {
+      var _this = this;
+
       TooltipControl.addTooltip(this);
       this.attachEvent("onDestruct", function () {
         TooltipControl.removeTooltip(this);
@@ -5673,6 +5743,25 @@
       this.attachEvent("onAfterScroll", function () {
         if (TooltipControl._tooltip_exist) TooltipControl._hide_tooltip();
       });
+
+      if (this.data && this.data.attachEvent) {
+        this.data.attachEvent("onStoreUpdated", function (id, obj, mode) {
+          if (TooltipControl._tooltip_exist && TooltipControl._last == _this.$view) {
+            if (!id) // parse/load
+              TooltipControl._hide_tooltip();else {
+              var tooltip = TooltipControl.getTooltip();
+              var data = tooltip.data;
+
+              if (data && data.id == id && mode == "update") {
+                tooltip.data = copy(obj); // update tooltip with new data
+
+                tooltip.render();
+              } else if (!data || mode != "update") // add/remove/move item can cause incorrect tooltip pos, so just hide it
+                TooltipControl._hide_tooltip();
+            }
+          }
+        });
+      }
 
       this._init_tooltip_once = function () {};
     },
@@ -16532,7 +16621,7 @@
     }
   };
 
-  var version = "11.1.1";
+  var version = "11.2.0";
   var name = "core";
 
   var errorMessage = "non-existing view for export";
@@ -17309,6 +17398,164 @@
     return clone$$1;
   }
 
+  // https://docs.sheetjs.com/docs/csf/features/formulae/#prefixed-future-functions
+  // Functions introduced in newer versions of Excel are prefixed with _xlfn. when stored in files.
+  // When writing formula expressions using these functions, the prefix is required for maximal compatibility:
+  // Broadest compatibility: XLSX.utils.sheet_set_array_formula(worksheet, "C1", "_xlfn.UNIQUE(A1:A3)", 1);
+  // Can cause errors in spreadsheet software: XLSX.utils.sheet_set_array_formula(worksheet, "C1", "UNIQUE(A1:A3)", 1);
+  // This list is growing with each Excel release.
+  var xlfnReplacements = {
+    "ACOT": "_xlfn.ACOT",
+    "ACOTH": "_xlfn.ACOTH",
+    "AGGREGATE": "_xlfn.AGGREGATE",
+    "ARABIC": "_xlfn.ARABIC",
+    "BASE": "_xlfn.BASE",
+    "BETA.DIST": "_xlfn.BETA.DIST",
+    "BETA.INV": "_xlfn.BETA.INV",
+    "BINOM.DIST": "_xlfn.BINOM.DIST",
+    "BINOM.DIST.RANGE": "_xlfn.BINOM.DIST.RANGE",
+    "BINOM.INV": "_xlfn.BINOM.INV",
+    "BITAND": "_xlfn.BITAND",
+    "BITLSHIFT": "_xlfn.BITLSHIFT",
+    "BITOR": "_xlfn.BITOR",
+    "BITRSHIFT": "_xlfn.BITRSHIFT",
+    "BITXOR": "_xlfn.BITXOR",
+    "BYCOL": "_xlfn.BYCOL",
+    "BYROW": "_xlfn.BYROW",
+    "CEILING.MATH": "_xlfn.CEILING.MATH",
+    "CEILING.PRECISE": "_xlfn.CEILING.PRECISE",
+    "CHISQ.DIST": "_xlfn.CHISQ.DIST",
+    "CHISQ.DIST.RT": "_xlfn.CHISQ.DIST.RT",
+    "CHISQ.INV": "_xlfn.CHISQ.INV",
+    "CHISQ.INV.RT": "_xlfn.CHISQ.INV.RT",
+    "CHISQ.TEST": "_xlfn.CHISQ.TEST",
+    "COMBINA": "_xlfn.COMBINA",
+    "CONCAT": "_xlfn.CONCAT",
+    "CONFIDENCE.NORM": "_xlfn.CONFIDENCE.NORM",
+    "CONFIDENCE.T": "_xlfn.CONFIDENCE.T",
+    "COT": "_xlfn.COT",
+    "COTH": "_xlfn.COTH",
+    "COVARIANCE.P": "_xlfn.COVARIANCE.P",
+    "COVARIANCE.S": "_xlfn.COVARIANCE.S",
+    "CSC": "_xlfn.CSC",
+    "CSCH": "_xlfn.CSCH",
+    "DAYS": "_xlfn.DAYS",
+    "DECIMAL": "_xlfn.DECIMAL",
+    "ECMA.CEILING": "_xlfn.ECMA.CEILING",
+    "ERF.PRECISE": "_xlfn.ERF.PRECISE",
+    "ERFC.PRECISE": "_xlfn.ERFC.PRECISE",
+    "EXPON.DIST": "_xlfn.EXPON.DIST",
+    "F.DIST": "_xlfn.F.DIST",
+    "F.DIST.RT": "_xlfn.F.DIST.RT",
+    "F.INV": "_xlfn.F.INV",
+    "F.INV.RT": "_xlfn.F.INV.RT",
+    "F.TEST": "_xlfn.F.TEST",
+    "FIELDVALUE": "_xlfn.FIELDVALUE",
+    "FILTERXML": "_xlfn.FILTERXML",
+    "FLOOR.MATH": "_xlfn.FLOOR.MATH",
+    "FLOOR.PRECISE": "_xlfn.FLOOR.PRECISE",
+    "FORECAST.ETS": "_xlfn.FORECAST.ETS",
+    "FORECAST.ETS.CONFINT": "_xlfn.FORECAST.ETS.CONFINT",
+    "FORECAST.ETS.SEASONALITY": "_xlfn.FORECAST.ETS.SEASONALITY",
+    "FORECAST.ETS.STAT": "_xlfn.FORECAST.ETS.STAT",
+    "FORECAST.LINEAR": "_xlfn.FORECAST.LINEAR",
+    "FORMULATEXT": "_xlfn.FORMULATEXT",
+    "GAMMA": "_xlfn.GAMMA",
+    "GAMMA.DIST": "_xlfn.GAMMA.DIST",
+    "GAMMA.INV": "_xlfn.GAMMA.INV",
+    "GAMMALN.PRECISE": "_xlfn.GAMMALN.PRECISE",
+    "GAUSS": "_xlfn.GAUSS",
+    "HYPGEOM.DIST": "_xlfn.HYPGEOM.DIST",
+    "IFNA": "_xlfn.IFNA",
+    "IFS": "_xlfn.IFS",
+    "IMCOSH": "_xlfn.IMCOSH",
+    "IMCOT": "_xlfn.IMCOT",
+    "IMCSC": "_xlfn.IMCSC",
+    "IMCSCH": "_xlfn.IMCSCH",
+    "IMSEC": "_xlfn.IMSEC",
+    "IMSECH": "_xlfn.IMSECH",
+    "IMSINH": "_xlfn.IMSINH",
+    "IMTAN": "_xlfn.IMTAN",
+    "ISFORMULA": "_xlfn.ISFORMULA",
+    "ISO.CEILING": "_xlfn.ISO.CEILING",
+    "ISOMITTED": "_xlfn.ISOMITTED",
+    "ISOWEEKNUM": "_xlfn.ISOWEEKNUM",
+    "LAMBDA": "_xlfn.LAMBDA",
+    "LET": "_xlfn.LET",
+    "LOGNORM.DIST": "_xlfn.LOGNORM.DIST",
+    "LOGNORM.INV": "_xlfn.LOGNORM.INV",
+    "MAKEARRAY": "_xlfn.MAKEARRAY",
+    "MAP": "_xlfn.MAP",
+    "MAXIFS": "_xlfn.MAXIFS",
+    "MINIFS": "_xlfn.MINIFS",
+    "MODE.MULT": "_xlfn.MODE.MULT",
+    "MODE.SNGL": "_xlfn.MODE.SNGL",
+    "MUNIT": "_xlfn.MUNIT",
+    "NEGBINOM.DIST": "_xlfn.NEGBINOM.DIST",
+    "NETWORKDAYS.INTL": "_xlfn.NETWORKDAYS.INTL",
+    "NORM.DIST": "_xlfn.NORM.DIST",
+    "NORM.INV": "_xlfn.NORM.INV",
+    "NORM.S.DIST": "_xlfn.NORM.S.DIST",
+    "NORM.S.INV": "_xlfn.NORM.S.INV",
+    "NUMBERVALUE": "_xlfn.NUMBERVALUE",
+    "PDURATION": "_xlfn.PDURATION",
+    "PERCENTILE.EXC": "_xlfn.PERCENTILE.EXC",
+    "PERCENTILE.INC": "_xlfn.PERCENTILE.INC",
+    "PERCENTRANK.EXC": "_xlfn.PERCENTRANK.EXC",
+    "PERCENTRANK.INC": "_xlfn.PERCENTRANK.INC",
+    "PERMUTATIONA": "_xlfn.PERMUTATIONA",
+    "PHI": "_xlfn.PHI",
+    "POISSON.DIST": "_xlfn.POISSON.DIST",
+    "QUARTILE.EXC": "_xlfn.QUARTILE.EXC",
+    "QUARTILE.INC": "_xlfn.QUARTILE.INC",
+    "QUERYSTRING": "_xlfn.QUERYSTRING",
+    "RANDARRAY": "_xlfn.RANDARRAY",
+    "RANK.AVG": "_xlfn.RANK.AVG",
+    "RANK.EQ": "_xlfn.RANK.EQ",
+    "REDUCE": "_xlfn.REDUCE",
+    "RRI": "_xlfn.RRI",
+    "SCAN": "_xlfn.SCAN",
+    "SEC": "_xlfn.SEC",
+    "SECH": "_xlfn.SECH",
+    "SEQUENCE": "_xlfn.SEQUENCE",
+    "SHEET": "_xlfn.SHEET",
+    "SHEETS": "_xlfn.SHEETS",
+    "SKEW.P": "_xlfn.SKEW.P",
+    "SORTBY": "_xlfn.SORTBY",
+    "STDEV.P": "_xlfn.STDEV.P",
+    "STDEV.S": "_xlfn.STDEV.S",
+    "SWITCH": "_xlfn.SWITCH",
+    "T.DIST": "_xlfn.T.DIST",
+    "T.DIST.2T": "_xlfn.T.DIST.2T",
+    "T.DIST.RT": "_xlfn.T.DIST.RT",
+    "T.INV": "_xlfn.T.INV",
+    "T.INV.2T": "_xlfn.T.INV.2T",
+    "T.TEST": "_xlfn.T.TEST",
+    "TEXTJOIN": "_xlfn.TEXTJOIN",
+    "UNICHAR": "_xlfn.UNICHAR",
+    "UNICODE": "_xlfn.UNICODE",
+    "UNIQUE": "_xlfn.UNIQUE",
+    "VAR.P": "_xlfn.VAR.P",
+    "VAR.S": "_xlfn.VAR.S",
+    "WEBSERVICE": "_xlfn.WEBSERVICE",
+    "WEIBULL.DIST": "_xlfn.WEIBULL.DIST",
+    "WORKDAY.INTL": "_xlfn.WORKDAY.INTL",
+    "XLOOKUP": "_xlfn.XLOOKUP",
+    "XOR": "_xlfn.XOR",
+    "TOROW": "_xlfn.TOROW",
+    "TOCOL": "_xlfn.TOCOL",
+    "TEXTSPLIT": "_xlfn.TEXTSPLIT",
+    "WRAPROWS": "_xlfn.WRAPROWS",
+    "WRAPCOLS": "_xlfn.WRAPCOLS",
+    "TAKE": "_xlfn.TAKE",
+    "DROP": "_xlfn.DROP",
+    "CHOOSEROWS": "_xlfn.CHOOSEROWS",
+    "CHOOSECOLS": "_xlfn.CHOOSECOLS",
+    "EXPAND": "_xlfn.EXPAND",
+    "SORT": "_xlfn.SORT",
+    "Z.TEST": "_xlfn.Z.TEST"
+  };
+
   var toExcel = function (id, options) {
     options = options || {};
     options.export_mode = "excel";
@@ -17503,7 +17750,7 @@
 
         if (isFormula) {
           if (cell.v.ref) cell.F = cell.v.ref;
-          cell.f = cell.v.formula.substring(1);
+          cell.f = addXlfnPrefix(cell.v.formula.substring(1));
           cell.v = stringValue;
         } // set type based on cell's value
 
@@ -17669,6 +17916,16 @@
     }
 
     return wscols;
+  }
+
+  var xlfnRegex = new RegExp("(^|[+\\-*/(=:,])(".concat(Object.keys(xlfnReplacements).map(function (func) {
+    return func.replace(/\./g, "\\.");
+  }).join("|"), ")(?=\\s*\\()"), "g");
+
+  function addXlfnPrefix(formula) {
+    return formula.replace(xlfnRegex, function (match, prefix, name) {
+      return prefix + xlfnReplacements[name];
+    });
   }
 
   function editStop() {
@@ -19251,7 +19508,7 @@
       },
       render: function (master, config) {
         if (this.init) this.init(config);
-        config.css = (config.css || "") + " webix_ss_filter";
+        config.css = appendCssClass(config.css, "webix_ss_filter");
         return "<input " + (config.placeholder ? "placeholder=\"" + config.placeholder + "\" " : "") + "type='text'>";
       },
       _on_key_down: function (e) {
@@ -19316,7 +19573,7 @@
       },
       render: function (master, config) {
         if (this.init) this.init(config);
-        config.css = (config.css || "") + " webix_ss_filter";
+        config.css = appendCssClass(config.css, "webix_ss_filter");
         return "";
       },
       _on_change: function () {
@@ -21123,17 +21380,43 @@
         this._cells[i].$setSize(width, height);
       }
 
+      var newSizes = [];
+      var dIndex = this._vertical_orientation ? 1 : 0;
+      var maxSizeIndex = this._vertical_orientation ? 3 : 1;
+      var maxSizeDelta = 0;
+
       for (var _i2 = 0; _i2 < auto.length; _i2++) {
         var index$$1 = auto[_i2].oldIndex;
         var _sizes = this._sizes[index$$1];
         var dx = Math.round(this._set_size_delta * _sizes[4] / this._set_size_gravity);
         this._set_size_delta -= dx;
         this._set_size_gravity -= _sizes[4];
-        if (this._vertical_orientation) height = _sizes[3] > -1 ? Math.min(dx, _sizes[3]) : dx;else {
-          width = _sizes[1] > -1 ? Math.min(dx, _sizes[1]) : dx;
-        }
+        var size = [];
+        size[dIndex] = dx;
+        size[1 - dIndex] = dIndex ? width : height;
+        newSizes.push(size); // check and apply size limit ( maxWidth / maxHeight )
 
-        auto[_i2].view.$setSize(width, height);
+        var maxSize = _sizes[maxSizeIndex];
+
+        if (maxSize > -1 && dx > maxSize) {
+          maxSizeDelta += dx - maxSize;
+          size[dIndex] = maxSize;
+        }
+      } // increase size of a cell without a size limit by maxSizeDelta
+
+
+      for (var _i3 = 0; _i3 < auto.length && maxSizeDelta; _i3++) {
+        var _index = auto[_i3].oldIndex;
+        var _sizes2 = this._sizes[_index];
+
+        if (_sizes2[maxSizeIndex] > newSizes[_i3][dIndex] + maxSizeDelta) {
+          newSizes[_i3][dIndex] += maxSizeDelta;
+          maxSizeDelta = 0;
+        }
+      }
+
+      for (var _i4 = 0; _i4 < auto.length; _i4++) {
+        auto[_i4].view.$setSize(newSizes[_i4][0], newSizes[_i4][1]);
       }
 
       state._child_sizing_active -= 1;
@@ -29695,33 +29978,234 @@
   var view$L = exports.protoUI(api$L, EventSystem, Settings);
 
   var Mixin$3 = {
+    _rs_init_flag: true,
     resizeRow_setter: function (value) {
       this._settings.scrollAlignY = false;
       this._settings.fixedRowHeight = false;
-      return this.resizeColumn_setter(value);
-    },
-    resizeColumn_setter: function (value) {
-      var _this = this;
 
-      if (value && this._rs_init_flag) {
-        _event(this._viewobj, "mousemove", function (e) {
-          return _this._rs_move(e);
-        });
-
-        _event(this._viewobj, "mousedown", function (e) {
-          return _this._rs_down(e);
-        });
-
-        _event(this._viewobj, "mouseup", function () {
-          return _this._rs_up();
-        });
-
-        this._rs_init_flag = false;
-      }
+      this._applyResizeHandlers(value);
 
       return value;
     },
-    _rs_init_flag: true,
+    resizeColumn_setter: function (value) {
+      this._applyResizeHandlers(value);
+
+      return value;
+    },
+    _applyResizeHandlers: function (value) {
+      var _this = this;
+
+      if (!this._rs_init_flag) return;
+
+      if (value) {
+        if (value.icon) {
+          _event(this._header, "pointerdown", function (e) {
+            return _this._handleResizerPointerDown(e, "header");
+          });
+
+          _event(this._footer, "pointerdown", function (e) {
+            return _this._handleResizerPointerDown(e, "footer");
+          });
+
+          this._renderResizers = true;
+        } else {
+          // backward compatibility
+          _event(this._viewobj, "mousemove", function (e) {
+            return _this._rs_move(e);
+          });
+
+          _event(this._viewobj, "mousedown", function (e) {
+            return _this._rs_down(e);
+          });
+
+          _event(this._viewobj, "mouseup", function () {
+            return _this._rs_up();
+          });
+        }
+
+        this._rs_init_flag = false;
+      }
+    },
+    _handleResizerPointerDown: function (e, section) {
+      var _this2 = this;
+
+      var resizerElement = this._findResizerElement(e.target);
+
+      if (!resizerElement) return;
+
+      var columnIndex = this._getColumnIndexFromResizer(resizerElement);
+
+      if (columnIndex === null) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var column = this._columns[columnIndex];
+      if (!column || column.resize === false) return;
+      var liveResize = isUndefined(this._settings.resizeColumn.live) ? true : !!this._settings.resizeColumn.live;
+      this._activeResizer = {
+        columnIndex: columnIndex,
+        section: section,
+        startX: e.clientX,
+        startWidth: column.width,
+        resizerElement: resizerElement,
+        updateLoop: false,
+        lastEvent: null
+      }; // better tracking for edge cases (iframes)
+
+      if (this._viewobj.setPointerCapture) this._viewobj.setPointerCapture(e.pointerId); // create a resize marker
+      // not using resizearea due to pointer events (resizearea uses mouse/touch events)
+
+      if (!liveResize) {
+        var marker = create("div", {
+          "class": "webix_resize_marker"
+        });
+
+        this._viewobj.appendChild(marker);
+
+        this._activeResizer.marker = marker;
+        var resizerRect = resizerElement.getBoundingClientRect();
+
+        var containerRect = this._viewobj.getBoundingClientRect();
+
+        var markerStart = containerRect.left + (resizerRect.left - containerRect.left) + resizerRect.width / 2;
+
+        this._updateMarkerPos(markerStart);
+
+        this._activeResizer.markerStart = markerStart;
+      }
+
+      this._resizerMoveEv = event$1(document, "pointermove", function (e) {
+        return _this2._handleResizerPointerMove(e, liveResize);
+      });
+      this._resizerUpEv = event$1(document, "pointerup", function (e) {
+        return _this2._handleResizerPointerUp(e, liveResize);
+      });
+      this._viewobj.style.cursor = "col-resize";
+      addCss(document.body, "webix_noselect");
+      denySelect();
+    },
+    _updateMarkerPos: function (pos$$1) {
+      var rect = this._viewobj.getBoundingClientRect();
+
+      this._activeResizer.marker.style.left = pos$$1 - rect.left + "px";
+    },
+    _handleResizerPointerMove: function (e, liveResize) {
+      if (!this._activeResizer) return;
+
+      if (liveResize) {
+        this._activeResizer.lastEvent = {
+          clientX: e.clientX,
+          clientY: e.clientY
+        };
+
+        if (!this._activeResizer.updateLoop) {
+          this._activeResizer.updateLoop = true;
+
+          this._startResizeUpdateLoop();
+        }
+      } else {
+        var _this$_activeResizer = this._activeResizer,
+            startX = _this$_activeResizer.startX,
+            markerStart = _this$_activeResizer.markerStart;
+        var delta = e.clientX - startX;
+
+        this._updateMarkerPos(markerStart + delta);
+      }
+    },
+    _handleResizerPointerUp: function (e, liveResize) {
+      var _this3 = this;
+
+      if (!this._activeResizer) return;
+      if (this._viewobj.releasePointerCapture) this._viewobj.releasePointerCapture(e.pointerId);
+
+      if (liveResize) {
+        this._activeResizer.updateLoop = false;
+      } else {
+        remove(this._activeResizer.marker);
+      }
+
+      window.requestAnimationFrame(function () {
+        return _this3._applyResize(e.clientX, true);
+      });
+    },
+    _startResizeUpdateLoop: function () {
+      var _this4 = this;
+
+      if (!this._activeResizer || !this._activeResizer.updateLoop) return;
+      var lastEvent = this._activeResizer.lastEvent;
+      if (lastEvent) this._applyResize(lastEvent.clientX, false);
+      window.requestAnimationFrame(function () {
+        return _this4._startResizeUpdateLoop();
+      });
+    },
+    _applyResize: function (currentX, isFinalized) {
+      if (!this._activeResizer) return;
+
+      var newWidth = this._calculateResizeWidth(currentX);
+
+      var columnIndex = this._activeResizer.columnIndex;
+      var column = this._columns[columnIndex];
+      if (!column || newWidth === null) return;
+      delete column.fillspace;
+      delete column.adjust;
+      if (isFinalized) this._activeResizer = null;
+
+      this._setColumnWidth(columnIndex, newWidth, true, true);
+
+      this._updateColsSizeSettings();
+
+      if (isFinalized) {
+        eventRemove(this._resizerMoveEv);
+        eventRemove(this._resizerUpEv);
+        this._viewobj.style.cursor = "";
+        removeCss(document.body, "webix_noselect");
+        allowSelect();
+      }
+    },
+    _calculateResizeWidth: function (currentX) {
+      if (!this._activeResizer) return null;
+      var _this$_activeResizer2 = this._activeResizer,
+          startX = _this$_activeResizer2.startX,
+          columnIndex = _this$_activeResizer2.columnIndex,
+          startWidth = _this$_activeResizer2.startWidth;
+      var deltaX = currentX - startX;
+      var isRightSplit = this._settings.rightSplit && columnIndex >= this._rightSplit;
+      var adjustedDelta = isRightSplit ? -deltaX : deltaX;
+      return Math.max(20, startWidth + adjustedDelta);
+    },
+    _getColumnIndexFromResizer: function (resizer) {
+      var columnAttr = resizer.getAttribute("data-col");
+
+      if (columnAttr !== null) {
+        return parseInt(columnAttr, 10);
+      }
+
+      var node = resizer;
+
+      while (node && node !== this._viewobj) {
+        columnAttr = node.getAttribute("data-col");
+
+        if (columnAttr !== null) {
+          return parseInt(columnAttr, 10);
+        }
+
+        node = node.parentElement;
+      }
+
+      return null;
+    },
+    _findResizerElement: function (target) {
+      var node = target;
+
+      while (node && node !== this._viewobj) {
+        if (node.classList && node.classList.contains("webix_resizer")) {
+          return node;
+        }
+
+        node = node.parentElement;
+      }
+
+      return null;
+    },
     _rs_down: function (e) {
       // do not listen to mousedown of subview on master
       if (!this._rs_ready || this._settings.subview && this != $$(e.target)) return;
@@ -29735,7 +30219,7 @@
       allowSelect();
     },
     _rs_start: function () {
-      var _this2 = this;
+      var _this5 = this;
 
       if (this._rs_progress) return;
 
@@ -29765,7 +30249,7 @@
         cursor: (dir == "x" ? "col" : "row") + "-resize"
       });
       resize.attachEvent("onResizeEnd", function (pos$$1) {
-        return _this2._rs_end(pos$$1);
+        return _this5._rs_end(pos$$1);
       });
       this._rs_ready = false;
     },
@@ -31305,18 +31789,84 @@
         }
       }
     },
+    _shouldKeepView: function (view, columns) {
+      var viewId = view.config.id; // protected views (headermenu, subviews) should not be removed
+
+      if (viewId === this._settings.headermenu || this._subViewStorage && this._subViewStorage[viewId]) {
+        return true;
+      }
+
+      var _iterator = _createForOfIteratorHelper(columns),
+          _step;
+
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var column = _step.value;
+
+          if (column.header && typeof column.header !== "string") {
+            var _iterator2 = _createForOfIteratorHelper(column.header),
+                _step2;
+
+            try {
+              for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+                var item = _step2.value;
+                if (this._headerItemReferencesView(item, viewId)) return true;
+              }
+            } catch (err) {
+              _iterator2.e(err);
+            } finally {
+              _iterator2.f();
+            }
+          }
+
+          if (column.footer && typeof column.footer !== "string") {
+            var _iterator3 = _createForOfIteratorHelper(column.footer),
+                _step3;
+
+            try {
+              for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+                var _item = _step3.value;
+                if (this._headerItemReferencesView(_item, viewId)) return true;
+              }
+            } catch (err) {
+              _iterator3.e(err);
+            } finally {
+              _iterator3.f();
+            }
+          }
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      return false;
+    },
+    _headerItemReferencesView: function (item, viewId) {
+      if (!item) return false; // data collections
+
+      if (item.options && item.options.config && item.options.config.id === viewId) return true; // richselectFilter and excelFilter contain references to views
+
+      var view = item.richselect ? $$(item.richselect) : item.filter ? $$(item.filter) : null;
+      return view && view.config && view.config.id === viewId;
+    },
     refreshColumns: function (columns) {
       var _this = this;
 
-      if (columns) columns = copy(columns, null, true);
+      if (columns) {
+        columns = copy(columns, null, true); // clean up the config before using it (we may be reusing a previously initialized config to some extent)
+
+        this._clean_config_struct(columns);
+      }
+
       var columnsUpdated = this._columns.length !== 0 && this._settings.columns !== this._columns || !!columns;
       this._dtable_column_refresh = true;
 
       if (columnsUpdated) {
         if (this._destroy_with_me.length) {
           this._destroy_with_me = this._destroy_with_me.filter(function (view) {
-            // remove filters/collections from the previous column config, don't touch other views
-            if (view.config.id === _this._settings.headermenu || _this._subViewStorage && _this._subViewStorage[view.config.id]) return true;
+            if (_this._shouldKeepView(view, columns)) return true;
             view.destructor();
             return false;
           });
@@ -32999,11 +33549,13 @@
       this._apply_headers();
     },
     _clean_config_struct: function () {
+      var columns = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._columns;
+
       //remove column technical info from the column
       //it allows to reuse the same config object for new grid
-      for (var i = 0; i < this._columns.length; i++) {
-        delete this._columns[i].attached;
-        delete this._columns[i].node;
+      for (var i = 0; i < columns.length; i++) {
+        delete columns[i].attached;
+        delete columns[i].node;
       }
     },
     _apply_headers: function () {
@@ -33208,86 +33760,188 @@
     _render_empty_hcell: function (height, css) {
       return "<div class='".concat(css, "' style='height:").concat(height, "px;'></div>");
     },
-    _render_subheader: function (start, end, width, name, heights) {
-      if (start == end) return "";
+    _render_subheader: function (area, name, heights) {
+      var areaBounds = {
+        left: {
+          start: 0,
+          end: this._settings.leftSplit,
+          width: this._left_width
+        },
+        center: {
+          start: this._settings.leftSplit,
+          end: this._rightSplit,
+          width: this._dtable_width
+        },
+        right: {
+          start: this._rightSplit,
+          end: this._columns.length,
+          width: this._right_width
+        }
+      };
+      var _areaBounds$area = areaBounds[area],
+          start = _areaBounds$area.start,
+          end = _areaBounds$area.end,
+          width = _areaBounds$area.width;
+      if (start === end) return "";
       var spans = "";
       var html = "<div style=\"background:inherit;width:".concat(width, "px;\">");
       var count = this._columns[0][name].length;
+      var resizerLocations = {}; // preprocess resizer locations for all header/footer cells
+
+      if (this._renderResizers) {
+        for (var i = start; i < end; i++) {
+          for (var j = 0; j < count; j++) {
+            var header = this._columns[i][name][j]; // left, right - process all columns
+            // center - process all columns except one
+
+            if (area !== "center" || i < end - 1) {
+              this._processResizerForCell(i, j, header, resizerLocations, {
+                name: name,
+                end: end,
+                count: count,
+                area: area
+              });
+            }
+          }
+        }
+      }
+
       var left = 0;
 
-      for (var i = start; i < end; i++) {
+      for (var _i5 = start; _i5 < end; _i5++) {
         var top = 0;
-        var _width = this._columns[i].width;
-        var abs = i == start ? "position:static;" : "position:absolute;top:".concat(top, "px;left:").concat(left, "px;");
-        html += "<div class=\"webix_hcolumn\" style=\"".concat(abs, "width:").concat(_width, "px;overflow:hidden;\">");
+        var column = this._columns[_i5];
+        var colWidth = column.width;
+        var pos$$1 = _i5 == start ? "position:static;" : "position:absolute;top:".concat(top, "px;left:").concat(left, "px;");
+        html += "<div class=\"webix_hcolumn\" style=\"".concat(pos$$1, "width:").concat(colWidth, "px;\">");
 
-        for (var j = 0; j < count; j++) {
-          var header = this._columns[i][name][j];
-          var cell_height = heights[j];
+        for (var _j3 = 0; _j3 < count; _j3++) {
+          var _header = this._columns[_i5][name][_j3];
+          var cell_height = heights[_j3];
           var hcss = "webix_hcell";
-          if (this._columns[i].$selected) hcss += " webix_sel_hcell";
-          if (i == start) hcss += " webix_first";
-          if (i == end - 1) hcss += " webix_last";
-          if (j == count - 1) hcss += " webix_last_row";
+          if (this._columns[_i5].$selected) hcss += " webix_sel_hcell";
+          if (_i5 == start) hcss += " webix_first";
+          if (_i5 == end - 1) hcss += " webix_last";
+          if (_j3 == count - 1) hcss += " webix_last_row";
+          if (this._settings.resizeColumn && this._settings.resizeColumn.icon) hcss += " webix_hcell_resizer";
 
-          if (!header) {
-            html += this._render_empty_hcell(cell_height + 1, hcss);
+          if (!_header) {
+            html += this._render_empty_hcell(cell_height + 1, hcss); // colspan check (actual cell is empty)
+
+            if (this._renderResizers && this._shouldRenderResizerAtPosition(_i5, _j3, resizerLocations)) {
+              html += this._renderResizer(_i5, _j3, colWidth, cell_height + 1, name);
+            }
+
             top += cell_height + 1;
             continue;
           }
 
-          if (header.content) {
-            header.contentId = header.contentId || uid();
-            header.columnId = this._columns[i].id;
-            header.format = this._columns[i].format;
+          if (_header.content) {
+            _header.contentId = _header.contentId || uid();
+            _header.columnId = this._columns[_i5].id;
+            _header.format = this._columns[_i5].format;
             assert(datafilter, "Filtering extension was not included");
-            assert(datafilter[header.content], "Unknown content type: " + header.content);
-            header.text = datafilter[header.content].render(this, header);
-            this._active_headers[header.contentId] = header;
+            assert(datafilter[_header.content], "Unknown content type: " + _header.content);
+            _header.text = datafilter[_header.content].render(this, _header);
+            this._active_headers[_header.contentId] = _header;
             this._has_active_headers = true;
           }
 
-          if (header.css) // apply unique css after content initialization
-            hcss += " " + header.css;
+          if (_header.css) hcss += " " + _header.css; // apply unique css after content initialization
+
           var cell = "<div " +
           /*@attr*/
-          "row" + "='" + j + "'" +
+          "row" + "='" + _j3 + "'" +
           /*@attr*/
-          "column" + "='" + (header.colspan ? header.colspan - 1 + i : i) + "'";
+          "column" + "='" + (_header.colspan ? _header.colspan - 1 + _i5 : _i5) + "'";
           var sheight = "";
-          if (header.contentId) cell += " " +
+          if (_header.contentId) cell += " " +
           /*@attr*/
-          "active_id" + "='" + header.contentId + "'";
+          "active_id" + "='" + _header.contentId + "'";
           var isSpan = false;
           var cheight = cell_height;
+          var cwidth = colWidth;
 
-          if (header.colspan && header.colspan > 1 || header.rowspan && header.rowspan > 1) {
-            var cwidth = this._summ_right(this._columns, i, header.colspan) || _width;
-
-            cheight = this._summ_next(heights, j, header.rowspan);
+          if (_header.colspan && _header.colspan > 1 || _header.rowspan && _header.rowspan > 1) {
+            cwidth = this._summ_right(this._columns, _i5, _header.colspan) || colWidth;
+            cheight = this._summ_next(heights, _j3, _header.rowspan);
             if (cheight <= 0) cheight = cell_height;
             html += this._render_empty_hcell(cell_height + 1, hcss);
-            if (header.colspan && i + header.colspan >= end) hcss += " webix_last";
-            if (header.rowspan && j + header.rowspan >= count) hcss += " webix_last_row";
+            if (_header.colspan && _i5 + _header.colspan >= end) hcss += " webix_last";
+            if (_header.rowspan && _j3 + _header.rowspan >= count) hcss += " webix_last_row";
             hcss += " webix_span";
             isSpan = true;
-            sheight = " colspan='".concat(header.colspan || 1, "' rowspan='").concat(header.rowspan || 1, "' style='position:absolute;top:").concat(top, "px;left:").concat(left, "px;line-height:").concat(cheight + 1, "px;width:").concat(cwidth, "px;height:").concat(cheight + 1, "px;'");
+            sheight = " colspan='".concat(_header.colspan || 1, "' rowspan='").concat(_header.rowspan || 1, "' style='position:absolute;top:").concat(top, "px;left:").concat(left, "px;line-height:").concat(cheight + 1, "px;width:").concat(cwidth, "px;height:").concat(cheight + 1, "px;'");
           } else if (cell_height != this._settings.headerRowHeight) sheight = " style='line-height:".concat(cell_height + 1, "px;height:").concat(cell_height + 1, "px;'");
 
           cell += " class=\"" + hcss + "\"";
           cell += " " + sheight + ">";
-          var text = header.text === "" ? "&nbsp;" : header.text;
-          if (header.rotate) text = "<div class='webix_rotate' style='width:" + (cheight - 10) + "px;transform-origin:center " + (cheight - 15) / 2 + "px;'>" + text + "</div>";
+          var text = _header.text === "" ? "&nbsp;" : _header.text;
+          if (_header.rotate) text = "<div class='webix_rotate' style='width:" + (cheight - 10) + "px;transform-origin:center " + (cheight - 15) / 2 + "px;'>" + text + "</div>";
           cell += text + "</div>";
           if (isSpan) spans += cell;else html += cell;
+
+          if (this._renderResizers && this._shouldRenderResizerAtPosition(_i5, _j3, resizerLocations)) {
+            html += this._renderResizer(_i5, _j3, colWidth, cheight + 1, name);
+          }
+
           top += cell_height + 1;
         }
 
-        left += _width;
+        left += colWidth;
         html += "</div>";
       }
 
       return html + spans + "</div>";
+    },
+    _processResizerForCell: function (col, row, header, resizerLocations, context) {
+      if (!header) return;
+      var isRightSplit = this._settings.rightSplit && col >= this._rightSplit;
+      var resizerPosition = isRightSplit ? "left" : "right";
+      var targetCol = header.colspan && header.colspan > 1 ? resizerPosition === "left" ? col : Math.min(col + header.colspan - 1, context.end - 1) : col;
+      var isLastCenterColumn = targetCol >= this._settings.leftSplit && targetCol < this._rightSplit && targetCol === this._rightSplit - 1; // check if target column has resize disabled OR is the absolute last column in the center area (colspan ending at the last column)
+
+      if (this._columns[targetCol].resize === false || isLastCenterColumn) {
+        return;
+      }
+
+      var isHeader = context.name === "header";
+      var isFooter = context.name === "footer";
+      var shouldRender = false; // header - render at the last row OR at the last rowspan (if it exists)
+      // footer - render at the first available row
+
+      if (isFooter) {
+        shouldRender = row === 0 ? true : !resizerLocations[targetCol];
+      } else {
+        shouldRender = header.rowspan ? row + header.rowspan === context.count : row === context.count - 1;
+      }
+
+      var resizerInfo = {
+        row: row,
+        sourceCol: col,
+        explicit: !!header.resizerIcon,
+        spanHeight: header.rowspan || 1,
+        position: resizerPosition,
+        targetCol: targetCol
+      };
+      var prevResizer = resizerLocations[targetCol];
+      var isPrev = prevResizer && (isHeader ? row > prevResizer.row : row < prevResizer.row); // explicit resizer definition always takes precedence
+
+      if (header.resizerIcon && (!(prevResizer && prevResizer.explicit) || isPrev) || shouldRender && (!prevResizer || !prevResizer.explicit)) {
+        resizerLocations[targetCol] = resizerInfo;
+      }
+    },
+    _shouldRenderResizerAtPosition: function (col, row, resizerLocations) {
+      var resizer = resizerLocations[col];
+      return resizer && resizer.row === row;
+    },
+    _renderResizer: function (col, row, width, height, section) {
+      var isActive = this._activeResizer && this._activeResizer.columnIndex === col && this._activeResizer.section === section;
+      var activeClass = isActive ? "webix_resize_active" : "";
+      var isRightSplit = this._settings.rightSplit && col >= this._rightSplit;
+      var left = isRightSplit ? 0 : width - 1;
+      var topOffset = (this._settings.headerRowHeight + 1) * row;
+      return "<div class=\"webix_resizer ".concat(activeClass, "\" data-col=\"").concat(col, "\" style=\"position:absolute;top:").concat(topOffset, "px;left:").concat(left, "px;height:").concat(height, "px;\">\n        <span class=\"wxi-stretch\"></span>\n    </div>");
     },
     _summ_next: function (heights, start, i) {
       var summ = -1;
@@ -33421,9 +34075,9 @@
       var _this4 = this;
 
       var header = sec.childNodes;
-      header[0].innerHTML = this._render_subheader(0, this._settings.leftSplit, this._left_width, name, heights);
-      header[1].innerHTML = this._render_subheader(this._settings.leftSplit, this._rightSplit, this._dtable_width, name, heights);
-      header[2].innerHTML = this._render_subheader(this._rightSplit, this._columns.length, this._right_width, name, heights);
+      header[0].innerHTML = this._render_subheader("left", name, heights);
+      header[1].innerHTML = this._render_subheader("center", name, heights);
+      header[2].innerHTML = this._render_subheader("right", name, heights);
       var x = this.getScrollState().x;
       if (env.touch) Touch._set_matrix(header[1].firstChild, -x, 0, "0ms");else header[1].scrollLeft = x;
 
@@ -34000,23 +34654,23 @@
           this._hideColumn(i, force);
         }
 
-        for (var _i5 = xr[1]; _i5 < this._rightSplit; _i5++) {
-          this._hideColumn(_i5, force);
+        for (var _i6 = xr[1]; _i6 < this._rightSplit; _i6++) {
+          this._hideColumn(_i6, force);
         }
       }
 
       this._render_full_rows = [];
 
-      for (var _i6 = 0; _i6 < this._settings.leftSplit; _i6++) {
-        this._renderColumn(_i6, yr, force);
+      for (var _i7 = 0; _i7 < this._settings.leftSplit; _i7++) {
+        this._renderColumn(_i7, yr, force);
       }
 
-      for (var _i7 = xr[0]; _i7 < xr[1]; _i7++) {
-        this._renderColumn(_i7, yr, force, _i7 == xr[0]);
+      for (var _i8 = xr[0]; _i8 < xr[1]; _i8++) {
+        this._renderColumn(_i8, yr, force, _i8 == xr[0]);
       }
 
-      for (var _i8 = this._rightSplit; _i8 < this._columns.length; _i8++) {
-        this._renderColumn(_i8, yr, force);
+      for (var _i9 = this._rightSplit; _i9 < this._columns.length; _i9++) {
+        this._renderColumn(_i9, yr, force);
       }
 
       this._check_and_render_full_rows(yr[0], yr[1], force);
@@ -34057,18 +34711,18 @@
 
       if (this._render_full_row_some) this._render_full_row_some = false;else return;
 
-      for (var _i9 = 0; _i9 < this._render_full_rows.length; _i9++) {
-        var info = this._render_full_rows[_i9];
+      for (var _i10 = 0; _i10 < this._render_full_rows.length; _i10++) {
+        var info = this._render_full_rows[_i10];
         var item = this.getItem(info.id);
         var value;
 
         if (typeof item.$row == "function") {
           value = item.$row.call(this, item, this.type);
         } else {
-          value = this._getValue(item, this.getColumnConfig(item.$row), _i9);
+          value = this._getValue(item, this.getColumnConfig(item.$row), _i10);
         }
 
-        var _row = this._rows_cache[_i9] = create("DIV", null, value);
+        var _row = this._rows_cache[_i10] = create("DIV", null, value);
 
         _row.className = "webix_cell " + (item.$sub ? "webix_dtable_sub" + (this._settings.subview ? "view" : "row") : "webix_dtable_colrow" + (item.$row ? " webix_topcell" + (this.data.getMark(item.id, "webix_selected") ? " webix_selected" : "") : ""));
 
@@ -34083,7 +34737,7 @@
         var height = item.$height || this._settings.rowHeight;
         if (item.$subopen) _row.style.height = item.$subHeight + "px";else _row.style.height = height + "px";
         _row.style.paddingRight = env.scrollSize + "px";
-        var topDelta = this._render_full_rows[_i9].index < this.config.topSplit ? -this._render_scroll_shift : 0;
+        var topDelta = this._render_full_rows[_i10].index < this.config.topSplit ? -this._render_scroll_shift : 0;
         _row.style.top = topDelta + info.top + (item.$subopen ? height - 1 : 0) + "px";
 
         if (!this._rows_body) {
@@ -34334,8 +34988,8 @@
 
       this._data_request_flag = null;
 
-      for (var _i10 = Math.max(yr[0], this._settings.topSplit); _i10 < yr[1]; _i10++) {
-        html += this._render_single_cell(_i10, config, yr, state, -1, index$$1);
+      for (var _i11 = Math.max(yr[0], this._settings.topSplit); _i11 < yr[1]; _i11++) {
+        html += this._render_single_cell(_i11, config, yr, state, -1, index$$1);
       } // preserve target node for Safari wheel event
 
 
@@ -34791,6 +35445,8 @@
       return found; //returns true if item was located and event was triggered
     },
     _get_tooltip_data: function (t, e) {
+      var _this8 = this;
+
       var id = this.locate(e);
       if (!id) return null;
       var tooltip = TooltipControl._tooltip;
@@ -34823,7 +35479,9 @@
         if (!_config.tooltip && _config.tooltip !== undefined) return null;
 
         if (_config.tooltip === true || !_config.tooltip && isUndefined(this._settings.tooltip.template)) {
-          data = this.getText(id.row, id.column).toString();
+          tooltip.type.template = function () {
+            return _this8.getText(id.row, id.column).toString();
+          };
         } else if (_config.tooltip) {
           var area = e.target.getAttribute("webix_area");
 

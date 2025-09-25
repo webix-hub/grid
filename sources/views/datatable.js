@@ -402,12 +402,12 @@ const api = {
 	_define_structure_and_render:function(){
 		this._apply_headers();
 	},
-	_clean_config_struct:function(){ 
+	_clean_config_struct:function(columns = this._columns){
 		//remove column technical info from the column
 		//it allows to reuse the same config object for new grid
-		for (var i = 0; i < this._columns.length; i++){
-			delete this._columns[i].attached;
-			delete this._columns[i].node;
+		for (let i = 0; i < columns.length; i++){
+			delete columns[i].attached;
+			delete columns[i].node;
 		}
 	},
 	_apply_headers:function(){
@@ -598,19 +598,45 @@ const api = {
 	_render_empty_hcell:function(height, css){
 		return `<div class='${css}' style='height:${height}px;'></div>`;
 	},
-	_render_subheader:function(start, end, width, name, heights){
-		if (start == end) return "";
+	_render_subheader:function(area, name, heights){
+		const areaBounds = {
+			left: { start: 0, end: this._settings.leftSplit, width: this._left_width },
+			center: { start: this._settings.leftSplit, end: this._rightSplit, width: this._dtable_width },
+			right: { start: this._rightSplit, end: this._columns.length, width: this._right_width }
+		};
+		
+		const { start, end, width } = areaBounds[area];
+		if (start === end) return "";
 
 		let spans = "";
 		let html = `<div style="background:inherit;width:${width}px;">`;
 		const count = this._columns[0][name].length;
+		const resizerLocations = {};
+
+		// preprocess resizer locations for all header/footer cells
+		if (this._renderResizers) {
+			for (let i = start; i < end; i++){
+				for (let j = 0; j < count; j++){
+					const header = this._columns[i][name][j];
+				
+					// left, right - process all columns
+					// center - process all columns except one
+					if (area !== "center" || i < end - 1) {
+						this._processResizerForCell(i, j, header, resizerLocations, { name, end, count, area });
+					}
+				}
+			}
+		}
 
 		let left = 0;
 		for (let i = start; i < end; i++){
 			let top = 0;
-			const width = this._columns[i].width;
-			const abs = i == start ? "position:static;" : `position:absolute;top:${top}px;left:${left}px;`;
-			html += `<div class="webix_hcolumn" style="${abs}width:${width}px;overflow:hidden;">`;
+			const column = this._columns[i];
+			const colWidth = column.width;
+			const pos = i == start ? "position:static;" : `position:absolute;top:${top}px;left:${left}px;`;
+
+			html += `<div class="webix_hcolumn" style="${pos}width:${colWidth}px;">`;
+
 			for (let j = 0; j < count; j++){
 				const header = this._columns[i][name][j];
 				const cell_height = heights[j];
@@ -620,9 +646,14 @@ const api = {
 				if (i == start) hcss += " webix_first";
 				if (i == end-1) hcss += " webix_last";
 				if (j == count-1) hcss += " webix_last_row";
+				if (this._settings.resizeColumn && this._settings.resizeColumn.icon) hcss += " webix_hcell_resizer";
 
 				if (!header){
 					html += this._render_empty_hcell(cell_height+1, hcss);
+					// colspan check (actual cell is empty)
+					if (this._renderResizers && this._shouldRenderResizerAtPosition(i, j, resizerLocations)) {
+						html += this._renderResizer(i, j, colWidth, cell_height + 1, name);
+					}
 					top += cell_height+1;
 					continue;
 				}
@@ -640,8 +671,7 @@ const api = {
 					this._has_active_headers = true;
 				}
 
-				if (header.css)		// apply unique css after content initialization
-					hcss += " " + header.css;
+				if (header.css) hcss += " " + header.css; // apply unique css after content initialization
 
 				let cell = "<div "+/*@attr*/"row"+"='"+j+"'"+/*@attr*/"column"+"='"+(header.colspan?(header.colspan-1+i):i)+"'";
 
@@ -651,15 +681,18 @@ const api = {
 
 				let isSpan = false;
 				let cheight = cell_height;
+				let cwidth = colWidth;
+        
 				if ((header.colspan && header.colspan>1) || (header.rowspan && header.rowspan>1)){
-					const cwidth = this._summ_right(this._columns, i, header.colspan) || width;
+					cwidth = this._summ_right(this._columns, i, header.colspan) || colWidth;
 					cheight = this._summ_next(heights, j, header.rowspan);
 					if (cheight <= 0) cheight = cell_height;
 					html += this._render_empty_hcell(cell_height+1, hcss);
 
 					if (header.colspan && i+header.colspan >= end) hcss += " webix_last";
 					if (header.rowspan && j+header.rowspan >= count) hcss += " webix_last_row";
-					hcss += " webix_span"; isSpan = true;
+					hcss += " webix_span";
+					isSpan = true;
 					sheight = ` colspan='${header.colspan||1}' rowspan='${header.rowspan||1}' style='position:absolute;top:${top}px;left:${left}px;line-height:${cheight+1}px;width:${cwidth}px;height:${cheight+1}px;'`;
 				}
 				else if (cell_height != this._settings.headerRowHeight)
@@ -673,16 +706,86 @@ const api = {
 					text = "<div class='webix_rotate' style='width:"+(cheight-10)+"px;transform-origin:center "+(cheight-15)/2+"px;'>"+text+"</div>";
 
 				cell += text + "</div>";
+
 				if (isSpan) spans += cell;
 				else html += cell;
 
+				if (this._renderResizers && this._shouldRenderResizerAtPosition(i, j, resizerLocations)) {
+					html += this._renderResizer(i, j, colWidth, cheight + 1, name);
+				}
+
 				top += cell_height+1;
 			}
-			left += width;
+
+			left += colWidth;
 			html += "</div>";
 		}
 
 		return html + spans + "</div>";
+	},
+	_processResizerForCell: function(col, row, header, resizerLocations, context) {
+		if (!header) return;
+
+		const isRightSplit = this._settings.rightSplit && col >= this._rightSplit;
+		const resizerPosition = isRightSplit ? "left" : "right";
+		const targetCol = header.colspan && header.colspan > 1 
+			? (resizerPosition === "left" ? col : Math.min(col + header.colspan - 1, context.end - 1))
+			: col;
+		const isLastCenterColumn = targetCol >= this._settings.leftSplit && targetCol < this._rightSplit && targetCol === this._rightSplit - 1;
+
+		// check if target column has resize disabled OR is the absolute last column in the center area (colspan ending at the last column)
+		if (this._columns[targetCol].resize === false || isLastCenterColumn) {
+			return;
+		}
+
+		const isHeader = context.name === "header";
+		const isFooter = context.name === "footer";
+		let shouldRender = false;
+
+		// header - render at the last row OR at the last rowspan (if it exists)
+		// footer - render at the first available row
+		if (isFooter) {
+			shouldRender = row === 0 ? true : !resizerLocations[targetCol];
+		} else {
+			shouldRender = header.rowspan 
+				? row + header.rowspan === context.count
+				: row === context.count - 1;
+		}
+
+		const resizerInfo = {
+			row,
+			sourceCol: col,
+			explicit: !!header.resizerIcon,
+			spanHeight: header.rowspan || 1,
+			position: resizerPosition,
+			targetCol
+		};
+
+		const prevResizer = resizerLocations[targetCol];
+		const isPrev = prevResizer && (isHeader ? row > prevResizer.row : row < prevResizer.row);
+
+		// explicit resizer definition always takes precedence
+		if ((header.resizerIcon && (!(prevResizer && prevResizer.explicit) || isPrev)) ||
+			(shouldRender && (!prevResizer || !prevResizer.explicit))) {
+			resizerLocations[targetCol] = resizerInfo;
+		}
+	},
+	_shouldRenderResizerAtPosition: function(col, row, resizerLocations) {
+		const resizer = resizerLocations[col];
+		return resizer && resizer.row === row;
+	},
+	_renderResizer:function(col, row, width, height, section){
+		const isActive = this._activeResizer && 
+                    this._activeResizer.columnIndex === col && 
+                    this._activeResizer.section === section;
+		const activeClass = isActive ? "webix_resize_active" : "";
+		const isRightSplit = this._settings.rightSplit && col >= this._rightSplit;
+		const left = isRightSplit ? 0 : width - 1;
+		const topOffset = (this._settings.headerRowHeight + 1) * row;
+
+		return `<div class="webix_resizer ${activeClass}" data-col="${col}" style="position:absolute;top:${topOffset}px;left:${left}px;height:${height}px;">
+        <span class="wxi-stretch"></span>
+    </div>`;
 	},
 	_summ_next: function(heights, start, i){
 		var summ = -1;
@@ -807,9 +910,9 @@ const api = {
 	_render_header_section:function(sec, name, heights){
 		const header = sec.childNodes;
 
-		header[0].innerHTML = this._render_subheader(0, this._settings.leftSplit, this._left_width, name, heights);
-		header[1].innerHTML = this._render_subheader(this._settings.leftSplit, this._rightSplit, this._dtable_width, name, heights);
-		header[2].innerHTML = this._render_subheader(this._rightSplit, this._columns.length, this._right_width, name, heights);
+		header[0].innerHTML = this._render_subheader("left", name, heights);
+		header[1].innerHTML = this._render_subheader("center", name, heights);
+		header[2].innerHTML = this._render_subheader("right", name, heights);
 
 		const x = this.getScrollState().x;
 		if (env.touch)
@@ -2164,7 +2267,7 @@ const api = {
 				return null;
 
 			if (config.tooltip === true || (!config.tooltip && isUndefined(this._settings.tooltip.template))){
-				data = this.getText(id.row, id.column).toString();
+				tooltip.type.template = () => this.getText(id.row, id.column).toString();
 			} else if (config.tooltip){
 				let area = e.target.getAttribute("webix_area");
 

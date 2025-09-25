@@ -10,6 +10,8 @@
 @import "message.less";
 @import "dnd.less";
 
+@filterHeight: @barHeight - @skin_input_y_padding*2;
+
 .webix_column, .webix_hcolumn{
 	position:absolute;
 	top:0px;
@@ -34,10 +36,14 @@
 	overflow:hidden;
 	position:relative;
 }
-.webix_hs_center, .webix_hs_right, .webix_hs_left, .webix_ss_center, .webix_ss_right, .webix_ss_left{
-	overflow:hidden;
-	float:left;
-	position:relative;
+
+.webix_hs_center, .webix_ss_center, .webix_ss_right, .webix_ss_left {
+	overflow: hidden;
+}
+
+.webix_hs_center, .webix_hs_right, .webix_hs_left, .webix_ss_center, .webix_ss_right, .webix_ss_left {
+	float: left;
+	position: relative;
 }
 
 .webix_ss_center_scroll{
@@ -170,9 +176,22 @@
 	}
 }
 
-.webix_hcell.webix_ss_filter{
-	padding: @skin_input_y_padding 5px @skin_input_y_padding 5px;
+.webix_hcell.webix_ss_filter {
+	padding: @filterPadding;
+
+	&.webix_hcell_resizer {
+		padding: @resizerFilterPadding;
+	}
 }
+
+.webix_hcell.webix_div_filter {
+	padding: @divFilterPadding;
+
+	&.webix_hcell_resizer {
+		padding: @resizerDivFilterPadding;
+	}
+}
+
 .webix_hcell .webix_tree_close, .webix_hcell .webix_tree_open{
 	margin-right:5px;
 }
@@ -181,8 +200,6 @@
 	margin:0px 1px 2px;
 	vertical-align:middle;
 }
-
-@filterHeight: @barHeight - @skin_input_y_padding*2;
 
 
 .webix_ss_filter select, .webix_ss_filter input{
@@ -288,7 +305,64 @@
 	border:2px solid @selectBorderColor;
 }
 
+/* resizers */
+.webix_resizer {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1px;
+	touch-action: none;
+	z-index: 10;
+}
 
+.webix_resizer span {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: "Webix Material Icons";
+	font-size: 24px;
+	width: 20px;
+	height: 20px;
+	line-height: 1;
+	cursor: col-resize;
+	color: #B1BABE;
+
+	&:before {
+		pointer-events: none;
+	}
+
+	&:hover {
+		color: @baseColor;
+	}
+}
+
+.webix_resize_active.webix_resizer span {
+	color: @baseColor;
+}
+
+.webix_resize_marker {
+	position: absolute;
+	width: 1px;
+	top: 0;
+	bottom: 0;
+	background: @baseColor;
+	pointer-events: none;
+}
+
+.webix_hcell_resizer.webix_hcell {
+	.webix_excel_filter {
+		right: 6px;
+
+		& ~ .webix_ss_sort_asc, & ~ .webix_ss_sort_desc {
+			right: 28px;
+		}
+	} 
+
+	.webix_ss_sort_asc:not(.webix_excel_filter ~ .webix_ss_sort_asc),
+	.webix_ss_sort_desc:not(.webix_excel_filter ~ .webix_ss_sort_desc) {
+		right: 6px;
+	}
+}
 
 .webix_dd_drag{
 	white-space: nowrap; overflow: hidden;

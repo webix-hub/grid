@@ -1,5 +1,5 @@
 import {pos as getPos} from "../webix/html";
-import {delay, extend, isUndefined} from "../webix/helpers";
+import {delay, extend, isUndefined, copy} from "../webix/helpers";
 import TooltipControl from "../core/tooltipcontrol";
 
 //indirect UI import
@@ -34,6 +34,24 @@ const AutoTooltip = {
 			if (TooltipControl._tooltip_exist)
 				TooltipControl._hide_tooltip();
 		});
+		if(this.data && this.data.attachEvent){
+			this.data.attachEvent("onStoreUpdated",(id, obj, mode)=>{
+				if (TooltipControl._tooltip_exist && TooltipControl._last == this.$view){
+					if(!id) // parse/load
+						TooltipControl._hide_tooltip();
+					else{
+						const tooltip = TooltipControl.getTooltip();
+						const data = tooltip.data;
+						if(data && data.id == id && mode == "update"){
+							tooltip.data = copy(obj); // update tooltip with new data
+							tooltip.render();
+						}
+						else if(!data || mode != "update") // add/remove/move item can cause incorrect tooltip pos, so just hide it
+							TooltipControl._hide_tooltip();
+					}
+				}
+			});
+		}
 
 		this._init_tooltip_once = function(){};
 	},

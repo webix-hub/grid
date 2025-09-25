@@ -704,12 +704,17 @@ button,
   position: relative;
 }
 .webix_hs_center,
+.webix_ss_center,
+.webix_ss_right,
+.webix_ss_left {
+  overflow: hidden;
+}
+.webix_hs_center,
 .webix_hs_right,
 .webix_hs_left,
 .webix_ss_center,
 .webix_ss_right,
 .webix_ss_left {
-  overflow: hidden;
   float: left;
   position: relative;
 }
@@ -841,7 +846,16 @@ button,
   color: #5a43e6;
 }
 .webix_hcell.webix_ss_filter {
-  padding: 3px 5px 3px 5px;
+  padding: 0px 4px;
+}
+.webix_hcell.webix_ss_filter.webix_hcell_resizer {
+  padding: 0px 8px;
+}
+.webix_hcell.webix_div_filter {
+  padding: 1px 4px;
+}
+.webix_hcell.webix_div_filter.webix_hcell_resizer {
+  padding: 1px 8px;
 }
 .webix_hcell .webix_tree_close,
 .webix_hcell .webix_tree_open {
@@ -962,6 +976,55 @@ button,
   z-index: 2;
   background: rgba(0, 0, 0, 0.1);
   border: 2px solid #384047;
+}
+/* resizers */
+.webix_resizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1px;
+  touch-action: none;
+  z-index: 10;
+}
+.webix_resizer span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Webix Material Icons";
+  font-size: 24px;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  cursor: col-resize;
+  color: #B1BABE;
+}
+.webix_resizer span:before {
+  pointer-events: none;
+}
+.webix_resizer span:hover {
+  color: #7A67EB;
+}
+.webix_resize_active.webix_resizer span {
+  color: #7A67EB;
+}
+.webix_resize_marker {
+  position: absolute;
+  width: 1px;
+  top: 0;
+  bottom: 0;
+  background: #7A67EB;
+  pointer-events: none;
+}
+.webix_hcell_resizer.webix_hcell .webix_excel_filter {
+  right: 6px;
+}
+.webix_hcell_resizer.webix_hcell .webix_excel_filter ~ .webix_ss_sort_asc,
+.webix_hcell_resizer.webix_hcell .webix_excel_filter ~ .webix_ss_sort_desc {
+  right: 28px;
+}
+.webix_hcell_resizer.webix_hcell .webix_ss_sort_asc:not(.webix_excel_filter ~ .webix_ss_sort_asc),
+.webix_hcell_resizer.webix_hcell .webix_ss_sort_desc:not(.webix_excel_filter ~ .webix_ss_sort_desc) {
+  right: 6px;
 }
 .webix_dd_drag {
   white-space: nowrap;
@@ -4282,12 +4345,6 @@ div.webix_modal_cover {
 .webix_dtable .webix_hs_left .webix_hcell.webix_last {
   border-right: 1px solid rgba(255, 255, 255, 0.26);
 }
-.webix_dtable .webix_hcell.webix_ss_filter {
-  padding: 0px 4px;
-}
-.webix_dtable .webix_hcell.webix_div_filter {
-  padding: 1px 4px;
-}
 .webix_dtable .webix_dtable_subview {
   background: #2A2B2D;
 }
@@ -5843,6 +5900,9 @@ textarea.webix_invalid {
 }
 .wxi-menu-up:before {
   content: "\F046";
+}
+.wxi-stretch:before {
+  content: "\F047";
 }
 /*predefined styles for text lables inside a item*/
 .webix_strong {

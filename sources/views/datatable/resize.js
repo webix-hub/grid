@@ -1,27 +1,198 @@
-import {pos, addCss, denySelect, removeCss, allowSelect, offset, posRelative} from "../../webix/html";
-import {delay} from "../../webix/helpers";
+import {pos, addCss, denySelect, removeCss, allowSelect, offset, posRelative, create, remove} from "../../webix/html";
+import {delay, isUndefined} from "../../webix/helpers";
 import {$$, ui} from "../../ui/core";
-import {_event} from "../../webix/htmlevents";
+import {_event, event, eventRemove} from "../../webix/htmlevents";
 
 //indirect import
 import "../resizearea";
 
 const Mixin = {
+	_rs_init_flag: true,
 	resizeRow_setter:function(value){
 		this._settings.scrollAlignY = false;
 		this._settings.fixedRowHeight = false;
-		return this.resizeColumn_setter(value);
-	},
-	resizeColumn_setter:function(value){
-		if (value && this._rs_init_flag){
-			_event(this._viewobj, "mousemove", e => this._rs_move(e));
-			_event(this._viewobj, "mousedown", e => this._rs_down(e));
-			_event(this._viewobj, "mouseup", () => this._rs_up());
-			this._rs_init_flag = false;
-		}
+		this._applyResizeHandlers(value);
 		return value;
 	},
-	_rs_init_flag:true,
+	resizeColumn_setter:function(value){
+		this._applyResizeHandlers(value);
+		return value;
+	},
+	_applyResizeHandlers: function(value) {
+		if (!this._rs_init_flag) return;
+    
+		if (value) {
+			if (value.icon) {
+				_event(this._header, "pointerdown", e => this._handleResizerPointerDown(e, "header"));
+				_event(this._footer, "pointerdown", e => this._handleResizerPointerDown(e, "footer"));
+
+				this._renderResizers = true;
+			} else {
+				// backward compatibility
+				_event(this._viewobj, "mousemove", e => this._rs_move(e));
+				_event(this._viewobj, "mousedown", e => this._rs_down(e));
+				_event(this._viewobj, "mouseup", () => this._rs_up());
+			}
+
+			this._rs_init_flag = false;
+		}
+	},
+	_handleResizerPointerDown: function(e, section) {
+		const resizerElement = this._findResizerElement(e.target);
+		if (!resizerElement) return;
+
+		let columnIndex = this._getColumnIndexFromResizer(resizerElement);
+		if (columnIndex === null) return;
+
+		e.preventDefault();
+		e.stopPropagation();
+
+		const column = this._columns[columnIndex];
+		if (!column || column.resize === false) return;
+
+		const liveResize = isUndefined(this._settings.resizeColumn.live) ? true : !!this._settings.resizeColumn.live;
+
+		this._activeResizer = {
+			columnIndex,
+			section,
+			startX: e.clientX,
+			startWidth: column.width,
+			resizerElement,
+			updateLoop: false,
+			lastEvent: null
+		};
+
+		// better tracking for edge cases (iframes)
+		if (this._viewobj.setPointerCapture) this._viewobj.setPointerCapture(e.pointerId);
+
+		// create a resize marker
+		// not using resizearea due to pointer events (resizearea uses mouse/touch events)
+		if (!liveResize) {
+			const marker = create("div", { class: "webix_resize_marker" });
+			this._viewobj.appendChild(marker);
+			this._activeResizer.marker = marker;
+
+			const resizerRect = resizerElement.getBoundingClientRect();
+			const containerRect = this._viewobj.getBoundingClientRect();
+			const markerStart = containerRect.left + (resizerRect.left - containerRect.left) + (resizerRect.width / 2);
+
+			this._updateMarkerPos(markerStart);
+			this._activeResizer.markerStart = markerStart;
+		}
+
+		this._resizerMoveEv = event(document, "pointermove", e => this._handleResizerPointerMove(e, liveResize));
+		this._resizerUpEv = event(document, "pointerup", e => this._handleResizerPointerUp(e, liveResize));
+
+		this._viewobj.style.cursor = "col-resize";
+
+		addCss(document.body, "webix_noselect");
+		denySelect();
+	},
+	_updateMarkerPos(pos) {
+		const rect = this._viewobj.getBoundingClientRect();
+		this._activeResizer.marker.style.left = (pos - rect.left) + "px";
+	},
+	_handleResizerPointerMove: function(e, liveResize) {
+		if (!this._activeResizer) return;
+
+		if (liveResize) {
+			this._activeResizer.lastEvent = { clientX: e.clientX, clientY: e.clientY };
+
+			if (!this._activeResizer.updateLoop) {
+				this._activeResizer.updateLoop = true;
+				this._startResizeUpdateLoop();
+			}
+		} else {
+			const { startX, markerStart } = this._activeResizer;
+			const delta = e.clientX - startX;
+			this._updateMarkerPos(markerStart + delta);
+		}
+	},
+	_handleResizerPointerUp: function(e, liveResize) {
+		if (!this._activeResizer) return;
+		if (this._viewobj.releasePointerCapture) this._viewobj.releasePointerCapture(e.pointerId);
+
+		if (liveResize) {
+			this._activeResizer.updateLoop = false;
+		} else {
+			remove(this._activeResizer.marker);
+		}
+
+		window.requestAnimationFrame(() => this._applyResize(e.clientX, true));
+	},
+	_startResizeUpdateLoop: function() {
+		if (!this._activeResizer || !this._activeResizer.updateLoop) return;
+
+		const lastEvent = this._activeResizer.lastEvent;
+		if (lastEvent) this._applyResize(lastEvent.clientX, false);
+
+		window.requestAnimationFrame(() => this._startResizeUpdateLoop());
+	},
+	_applyResize: function(currentX, isFinalized) {
+		if (!this._activeResizer) return;
+
+		const newWidth = this._calculateResizeWidth(currentX);
+		const columnIndex = this._activeResizer.columnIndex;
+		const column = this._columns[columnIndex];
+
+		if (!column || newWidth === null) return;
+
+		delete column.fillspace;
+		delete column.adjust;
+
+		if (isFinalized) this._activeResizer = null;
+
+		this._setColumnWidth(columnIndex, newWidth, true, true);
+		this._updateColsSizeSettings();
+
+		if (isFinalized) {
+			eventRemove(this._resizerMoveEv);
+			eventRemove(this._resizerUpEv);
+
+			this._viewobj.style.cursor = "";
+
+			removeCss(document.body, "webix_noselect");
+			allowSelect();
+		}
+	},
+	_calculateResizeWidth: function(currentX) {
+		if (!this._activeResizer) return null;
+
+		const { startX, columnIndex, startWidth } = this._activeResizer;
+		const deltaX = currentX - startX;
+		const isRightSplit = this._settings.rightSplit && columnIndex >= this._rightSplit;
+		const adjustedDelta = isRightSplit ? -deltaX : deltaX;
+    
+		return Math.max(20, startWidth + adjustedDelta);
+	},
+	_getColumnIndexFromResizer: function(resizer) {
+		let columnAttr = resizer.getAttribute("data-col");
+		if (columnAttr !== null) {
+			return parseInt(columnAttr, 10);
+		}
+
+		let node = resizer;
+		while (node && node !== this._viewobj) {
+			columnAttr = node.getAttribute("data-col");
+			if (columnAttr !== null) {
+				return parseInt(columnAttr, 10);
+			}
+			node = node.parentElement;
+		}
+
+		return null;
+	},
+	_findResizerElement: function(target) {
+		let node = target;
+		while (node && node !== this._viewobj) {
+			if (node.classList && node.classList.contains("webix_resizer")) {
+				return node;
+			}
+        
+			node = node.parentElement;
+		}
+		return null;
+	},
 	_rs_down:function(e){
 		// do not listen to mousedown of subview on master
 		if (!this._rs_ready || (this._settings.subview && this != $$(e.target))) return;
