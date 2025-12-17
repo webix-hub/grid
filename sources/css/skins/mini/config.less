@@ -2027,12 +2027,7 @@ div.webix_inp_static,.webix_el_textarea textarea {
 	}
 }
 // input labels
-
-.webixlabel{
-	font-weight: @boldStyle;
-}
-
-.webixtoolbarlabel{
+.webix_view.webix_measure_size .webixtoolbarlabel{
 	letter-spacing:0;
 }
 
@@ -2243,6 +2238,15 @@ div.webix_inp_static,.webix_el_textarea textarea {
 //timeboard
 .webix_timeboard .webix_colon_template .webix_template{
 	font-size: 27px;
+}
+
+// colorboard
+.webix_color_clear:hover {
+	background-color: @accentBg;
+}
+.webix_color_clear {
+	color: @baseColor;
+    justify-content: center;
 }
 
 //for skin autodetection

@@ -1663,11 +1663,6 @@ div.webix_inp_static,.webix_el_textarea textarea {
 	}
 }
 // input labels
-
-.webixlabel{
-	font-weight: @boldStyle;
-}
-
 .webix_inp_label, .webix_inp_top_label, legend.webix_forminput_label, .webix_el_label .webix_el_box{
 	.fontStyle(@fontSize, @boldStyle, @altFontColor);
 }
@@ -1839,6 +1834,14 @@ div.webix_inp_static,.webix_el_textarea textarea {
 	&:focus>* {
 		box-shadow: 0 0 0 2px @primaryActiveColor;
 	}
+}
+
+.webix_color_clear:hover {
+	background-color: @accentBg;
+}
+.webix_color_clear {
+	color: @fontColor;
+    justify-content: center;
 }
 
 //for skin autodetection

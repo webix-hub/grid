@@ -118,6 +118,9 @@ const de = {
 	},
 	timeboard:{
 		seconds: "Sekunden"
+	},
+	colorboard: {
+		clear: "Farbe entfernen"
 	}
 };
 

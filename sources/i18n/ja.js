@@ -117,6 +117,9 @@ const ja = {
 	},
 	timeboard:{
 		seconds: "秒"
+	},
+	colorboard: {
+		clear: "色を削除"
 	}
 };
 

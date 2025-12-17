@@ -82,8 +82,10 @@ const api = {
 		});
 		this.attachEvent("onMouseOut", function(e){
 			if (this._menu_was_activated() && this._settings.openAction == "click") return;
-			if (!this._child_menu_active && (!e.relatedTarget || !this.$view.contains(e.relatedTarget)))
+			if (!this._child_menu_active && (!e.relatedTarget || !this.$view.contains(e.relatedTarget))) {
+				if (this._open_sub_menu && $$(this._open_sub_menu).$view.contains(e.relatedTarget)) return;
 				this._hide_sub_menu();
+			}
 		});
 	},
 	sizeToContent:function(){

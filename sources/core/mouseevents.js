@@ -10,7 +10,7 @@ const MouseEvents={
 		config = config || {};
 
 		this._clickstamp = 0;
-		this._dbl_sensetive = env.touch ? 500 : 300;
+		this._dbl_sensitive = env.touch ? 500 : 300;
 		this._item_clicked = null;
 
 		this._mouse_action_extend(config.onClick, "on_click");
@@ -69,7 +69,7 @@ const MouseEvents={
 			this._clickHandler = delay(()=> {
 				this._clickHandler = null;
 				return this._mouseEvent(e, this.on_single_click, "ItemSingleClick");
-			}, null, [e], this._dbl_sensetive);
+			}, null, [e], this._dbl_sensitive);
 		}
 
 		return this._mouseEvent(e, this.on_click, "ItemClick");
@@ -89,8 +89,6 @@ const MouseEvents={
 	*/
 	_onMouse:function(e){
 		if (this.$destructed) return;
-		if (document.createEventObject)	//make a copy of event, will be used in timed call
-			e = document.createEventObject(event);
 
 		if (this._mouse_move_timer)	//clear old event timer
 			window.clearTimeout(this._mouse_move_timer);

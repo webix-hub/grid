@@ -101,9 +101,14 @@ const Mixin = {
 				Touch._scroll_stat = Touch._get_sizes(Touch._scroll_node);
 				Touch._scroll_stat.dy = this._dtable_height;
 				Touch._scroll_master = this;
+				this._touch_scroll_pending = null;
 			});
 			this.attachEvent("onTouchEnd", function(){
 				Touch._scroll_master = null;
+				if (this._touch_scroll_pending) {
+					window.cancelAnimationFrame(this._touch_scroll_pending);
+					this._touch_scroll_pending = null;
+				}
 			});
 			this.attachEvent("onAfterScroll", function(result){
 				//onAfterScroll may be triggered by some non-touch related logic
@@ -112,30 +117,47 @@ const Mixin = {
 				this._scrollTop = 0;
 				this._scrollLeft = 0;
 				this._sync_scroll(0, 0, "0ms");
-
-				this._scrollLeft = -result.e;
-				this._scrollTop = -result.f;
-
-				this._correctScrollSize();
-				this.render();
-
-				if (this._x_scroll){
-					this._x_scroll._settings.scrollPos = -1;
-					this._x_scroll.scrollTo(this._scrollLeft);
-					this.callEvent("onScrollX",[]);
+				// Remove preserved event target
+				if (this._touch_target) {
+					this._body.removeChild(this._touch_target);
+					this._touch_target = null;
 				}
-				if (this._y_scroll){
-					this._y_scroll._settings.scrollPos = -1;
-					this._y_scroll.scrollTo(this._scrollTop);
-					this.callEvent("onScrollY",[]);
-				}
+				this._touch_scroll_and_render(result);
 			});
+		},
+		_touch_scroll_and_render: function(result){
+			this._scrollLeft = -result.e;
+			this._scrollTop = -result.f;
+
+			this._correctScrollSize();
+			this.render();
+
+			if (this._x_scroll){
+				this._x_scroll._settings.scrollPos = -1;
+				this._x_scroll.scrollTo(this._scrollLeft);
+				this.callEvent("onScrollX",[]);
+			}
+			if (this._y_scroll){
+				this._y_scroll._settings.scrollPos = -1;
+				this._y_scroll.scrollTo(this._scrollTop);
+				this.callEvent("onScrollY",[]);
+			}
 		}
 	},
 
 	_sync_scroll:function(x,y,t){
-		const diff = this._settings.prerender ? 0 : this._scrollTop;
+		const prerender = this._settings.prerender;
+		const diff = prerender ? 0 : this._scrollTop;
+		const originalY = y;
 		y += diff;
+
+		if (Touch._start_context && !prerender && !this._touch_target) {
+			// Preserve target so touchmove continues firing
+			const {target} = Touch._start_context;
+			this._touch_target = target;
+			target.style.display = "none";
+			this._body.appendChild(target);
+		}
 
 		Touch._set_matrix(this._body.childNodes[1].firstChild, x, y, t);
 		if (this._settings.leftSplit)
@@ -152,6 +174,19 @@ const Mixin = {
 		if (this._y_scroll) this._y_scroll._sync(-y + diff, smooth);
 
 		this.callEvent("onSyncScroll", [x,y,t]);
+
+		// For lazy rendering, update scroll position and trigger rendering during touch move
+		if (!prerender && t === "0ms" && Touch._scroll_master === this) {
+			this._scrollLeft = -x;
+			this._scrollTop = -originalY;
+			if (!this._touch_scroll_pending) {
+				this._touch_scroll_pending = window.requestAnimationFrame(() => {
+					this._touch_scroll_pending = null;
+					const result = {e: -this._scrollLeft, f: -this._scrollTop};
+					this._touch_scroll_and_render(result);
+				});
+			}
+		}
 	},
 
 	_sync_y_scroll:function(y,t){

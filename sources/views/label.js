@@ -39,10 +39,12 @@ const api = {
 	_set_inner_size:false,
 	_set_default_css:function(){},
 	_calc_size:function(config){
-		const css = "webix_el_box webixlabel" + (this.queryView("toolbar", "parent") ? " webixtoolbarlabel" : "");
 		config = config || this._settings;
-		if (config.autowidth)
-			config.width = getTextSize(config.label, css).width;
+		if (config.autowidth){
+			const toolbarCss = this.queryView("toolbar", "parent") ? " webixtoolbarlabel" : "";
+			const label = `<div class="webix_el_box ${toolbarCss}">${config.label}</div>`;
+			config.width = getTextSize(label, `webix_control webix_el_label ${config.css||""}`).width;
+		}
 	}
 };
 

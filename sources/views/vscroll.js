@@ -56,22 +56,44 @@ const api = {
 		return value;
 	},
 	sizeTo:function(value, top, bottom){
-		value = value-(top||0)-(bottom||0);
+		const isHorizontal = this._settings.scroll === "x";
+		const availableSpace = isHorizontal
+			? value
+			: value - (top || 0) - (bottom || 0);
 
-		let width = this._settings.scrollSize;
-		if (!width && this._settings.scrollVisible && !env.$customScroll) width = 14;
+		// calculate scrollbar size, set fixed size for dynamic scrollbars
+		const scrollSize =
+			this._settings.scrollSize ||
+			(this._settings.scrollVisible && !env.$customScroll ? 14 : 0);
 
-		if (!width){
-			this._viewobj.style.display = "none";
-		} else {
-			this._viewobj.style.display = "block";
-			if (top)
-				this._viewobj.style.marginTop = top+ "px";
-			this._viewobj.style[this._settings.scroll == "x"?"width":"height"] = Math.max(0,value)+"px";
-			this._viewobj.style[this._settings.scroll == "x"?"height":"width"] = width+"px";
+		// dynamic scrollbars
+		// check if the content fits and disable/enable pointer events accordingly
+		if (!this._settings.scrollSize && !env.$customScroll) {
+			const contentSize = isHorizontal
+				? this._settings.scrollWidth
+				: this._settings.scrollHeight;
+			const contentFits =
+				!contentSize || contentSize * this._settings.zoom <= availableSpace;
+
+			this._viewobj.style.pointerEvents = contentFits ? "none" : "auto";
 		}
 
-		this._last_set_size = value;
+		this._viewobj.style.display = scrollSize ? "block" : "none";
+
+		if (scrollSize) {
+			if (!isHorizontal && top) this._viewobj.style.marginTop = top + "px";
+
+			this._viewobj.style[isHorizontal ? "width" : "height"] =
+				Math.max(0, availableSpace) + "px";
+			this._viewobj.style[isHorizontal ? "height" : "width"] =
+				scrollSize + "px";
+
+			// adjust dynamic scrollbar position
+			if (this._viewobj.style.position === "absolute")
+				this._viewobj.style.bottom = (bottom || 0) + "px";
+		}
+
+		this._last_set_size = availableSpace;
 	},
 	getScroll:function(){
 		return Math.round(this._settings.scrollPos*this._settings.zoom);
@@ -170,26 +192,35 @@ const api = {
 
 		let dir = 0;
 		const step = e.deltaMode === 0 ? 30 : 1;
-		if ((e.deltaX && Math.abs(e.deltaX) > Math.abs(e.deltaY)) || e.shiftKey){
+
+		// FF may produce an overly large scroll delta in lines
+		// set a hard limit for deltaMode 1 (lines), in case some other browser uses it too
+		const maxLines = 3;
+		const normalizeDir = (delta) => {
+			const dir = delta / step;
+			return e.deltaMode === 1 && Math.abs(dir) > maxLines
+				? Math.sign(dir) * maxLines
+				: dir;
+		};
+
+		if ((e.deltaX && Math.abs(e.deltaX) > Math.abs(e.deltaY)) || e.shiftKey) {
 			//x-scroll
 			if (this._x_scroll_mode && this._settings.scrollVisible)
-				dir = (e.shiftKey ? e.deltaY : e.deltaX) / step;
+				dir = normalizeDir(e.shiftKey ? e.deltaY : e.deltaX);
 		} else {
 			//y-scroll
 			if (!this._x_scroll_mode && this._settings.scrollVisible)
-				dir = e.deltaY / step;
+				dir = normalizeDir(e.deltaY);
 		}
 
 		// Safari requires target preserving
 		// (used in _check_rendered_cols of DataTable)
-		if (env.isSafari)
-			this._scroll_trg = e.target;
+		if (env.isSafari) this._scroll_trg = e.target;
 
-		if (dir){
+		if (dir) {
 			const old = this.getScroll();
-			this.scrollTo(old + dir*this._settings.scrollStep);
-			if (old !== this.getScroll())
-				preventEvent(e);
+			this.scrollTo(old + dir * this._settings.scrollStep);
+			if (old !== this.getScroll()) preventEvent(e);
 		}
 	}
 };

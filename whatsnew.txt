@@ -1,5 +1,24 @@
 Check the full list of changes at https://grid.webix.com/docs/whats-new/
 
+Version 11.3 (December 2025)
+=============================
+
+### Fixes
+
+- Datatable: improved dynamic rendering on touch and hybrid (2-in-1) devices
+- Regression: `refreshColumns` should not reapply filtering
+- Regression: frequent manual (intentional) `loadNext` calls were blocked
+- Custom Scroll on Firefox, Windows: scroll step was too large
+- Custom Scroll on Firefox, Windows: custom scroll didn't initialize properly
+- Custom Scroll on Firefox, Windows: footer could overlap the horizontal scrollbar
+- Custom Scroll on Firefox, Windows: scrollbar areas overlapped the data, preventing selection in the corners
+- Enhanced IME support for filters
+- better adjustment of `autowidth` for Label component in filters and editors.
+- regression: dynamic rendering on touch devices failed after scroll
+- regression: modifying columns directly and calling `refreshColumns` without an explicit array with columns caused TypeError
+- `refreshColumns` and `scrollTo` methods caused an error when called together on a hidden Grid
+- Willow and Dark skins: incorrect font-weight for resizer icons
+
 Version 11.2 (September 2025)
 =============================
 

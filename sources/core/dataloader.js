@@ -36,7 +36,6 @@ const DataLoader =proto({
 	_feed:function(from, count, callback, defer, clear){
 		//allow only single request at same time
 		if (this._load_count){
-			if(this._feed_last.from == from && this._feed_last.count == count) return promise.reject();
 			defer = promise.defer();
 			this._load_count = [from,count,callback,defer,clear];	//save last ignored request
 			return defer;
@@ -153,12 +152,14 @@ const DataLoader =proto({
 			return this.data.feed.call(this, start, count, callback, false, clear);
 		return promise.reject();
 	},
-	_maybe_loading_already:function(count, from){
-		var last = this._feed_last;
-		if(this._load_count && last.url){
-			if (last.from<=from && (last.count+last.from >= count + from )) return true;
-		}
-		return false;
+	_maybe_loading_already:function(from, count, next){
+		if (!this._load_count) return false;
+
+		const last = this._feed_last;
+		if (last.url)
+			return last.from <= from && (last.count + last.from >= count + from);
+		// proxy
+		return last.from === next.start  && last.count === next.count;
 	},
 	removeMissed_setter:function(value){
 		return (this.data._removeMissed = value);

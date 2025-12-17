@@ -58,14 +58,20 @@ const api = {
 	},
 	_id:/*@attr*/"webix_f_id",
 	on_click:{
-		webix_property_check:function(ev){
-			const id = this.locate(ev);
-			const item = this.getItem(id);
-			this.callEvent("onCheck", [id, item.value = !item.value]);
-			return false;
+		webix_property_check: function(ev){
+			this._handle_checkbox_click(ev);
 		}
 	},
 	on_dblclick:{
+		webix_property_check: function(ev){
+			this._handle_checkbox_click(ev);
+		}
+	},
+	_handle_checkbox_click: function(ev){
+		const id = this.locate(ev);
+		const item = this.getItem(id);
+		this.callEvent("onCheck", [id, item.value = !item.value]);
+		return false;
 	},
 	registerType:function(name, data){
 		if (!isUndefined(data.template))

@@ -1,12 +1,13 @@
 import env  from "../webix/env";
 import state from "../core/state";
 
-import {event} from "../webix/htmlevents";
+import {event, _event} from "../webix/htmlevents";
 import {isUndefined} from "../webix/helpers";
 import {callEvent} from "../webix/customevents";
 
 import {use} from "../services";
 
+// external/deprecated helpers
 export function _uid(name){
 	return "$"+name+(_namecount[name] = (_namecount[name]||0)+1);
 }
@@ -61,9 +62,43 @@ export function zIndex(index){
 	return env.zIndexBase++;
 }
 
+// internal helpers
 export function appendCssClass(css = "", className) {
 	if (!css.includes(className)) css += ` ${className}`;
 	return css;
+}
+
+export function handleCompositionAwareInput(element, evName, callback) {
+	_event(element, "compositionend", (e) => {
+		callback(e);
+	});
+
+	_event(element, evName, (e) => {
+		// IME processing
+		// https://www.w3.org/TR/uievents-key/#keys-composition
+		if (evName === "keydown" && e.key === "Process") return;
+
+		// when the event does not report the "Process" key but is still composing (macOS)
+		if (e.isComposing) {
+			// input navigation keys should be allowed even during composition
+			const allowedKeys = [
+				"Enter",
+				"Escape",
+				"Tab",
+				"ArrowLeft",
+				"ArrowRight",
+				"ArrowUp",
+				"ArrowDown",
+				"Home",
+				"End",
+				"PageUp",
+				"PageDown",
+			];
+			if (!allowedKeys.includes(e.key)) return;
+		}
+
+		callback(e);
+	});
 }
 
 event(window, "resize", function() {

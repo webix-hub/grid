@@ -1,7 +1,7 @@
 import {addCss, createCss} from "../webix/html";
 import {protoUI} from "../ui/core";
 import {$active} from "../webix/skin";
-import {extend, isArray} from "../webix/helpers";
+import {extend, isArray, isUndefined} from "../webix/helpers";
 import template from "../webix/template";
 
 import env from "../webix/env";
@@ -23,7 +23,8 @@ const api = {
 	_listClassName : "webix_list",
 	_itemClassName:"webix_list_item",
 	$init:function(config){
-		addCss(this._viewobj, this._listClassName + (((config.layout||this.defaults.layout) == "x")?"-x":"") );
+		const xList = (config.layout||this.defaults.layout) == "x";
+		addCss(this._viewobj, this._listClassName + ( xList ? "-x" : ""));
 		this.data.provideApi(this,true);
 
 		this.data.attachEvent("onStoreUpdated", (id, obj, mode) => {
@@ -32,6 +33,9 @@ const api = {
 		this.data.attachEvent("onSyncApply", () => this._auto_resize());
 
 		this._viewobj.setAttribute("role", "listbox");
+				
+		if (isUndefined(this.type.width)) 
+			this.type.width = xList ? 200 : "auto";
 	},
 	dynamic_setter:function(value){
 		if (value)
@@ -162,7 +166,6 @@ const api = {
 		template:function(obj){
 			return (obj.icon?("<span class='webix_list_icon webix_icon "+obj.icon+"'></span>"):"") + obj.value + (obj.badge||obj.badge===0?("<div class='webix_badge'>"+obj.badge+"</div>"):"");
 		},
-		width:"auto",
 		templateStart:template("<div "+/*@attr*/"webix_l_id"+"=\"#id#\" class=\"{common.classname()}\" style=\"width:{common.widthSize()}; height:{common.heightSize()}; overflow:hidden;\" {common.aria()}>"),
 		templateEnd:template("</div>")
 	},

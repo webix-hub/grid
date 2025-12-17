@@ -118,6 +118,9 @@ const it = {
 	},
 	timeboard:{
 		seconds: "secondi"
+	},
+	colorboard: {
+		clear: "Rimuovi colore"
 	}
 };
 

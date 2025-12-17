@@ -95,6 +95,10 @@ const DragControl ={
 	},
 	//logic of drag - start, we are not creating drag immediately, instead of that we hears mouse moving
 	_preStart:function(e, node, pointer){
+		//ignore resize area and other explicit attribute owners
+		if (e.target.getAttribute(/*@attr*/"webix_disable_drag"))
+			return;
+
 		if (DragControl._active){
 			//if we have nested drag areas, use the top one and ignore the inner one
 			if (DragControl._saved_event == e) return;

@@ -38,8 +38,18 @@ const api = {
 		callEvent("onResize",[]);
 	},
 	_resizeChildren:function(){
-		const cx = Math.max(this._content_width, this._desired_size[0]);
-		const cy = Math.max(this._content_height, this._desired_size[2]);
+		let cx = this._content_width;
+		let cy = this._content_height;
+		//  scroll "auto" case (converted to "xy")
+		if (this._settings.scroll === "xy") {
+			if (!this._scroll_y && this._desired_size[2] > cy)
+				cx -= env.scrollSize;
+			if (!this._scroll_x && this._desired_size[0] > cx)
+				cy -= env.scrollSize;
+		}
+		cx = Math.max(cx, this._desired_size[0]);
+		cy = Math.max(cy, this._desired_size[2]);
+
 		this._body_cell.$setSize(cx, cy);
 
 		const scroll = this.getScrollState();

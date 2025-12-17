@@ -784,7 +784,7 @@ const api = {
 		const topOffset = (this._settings.headerRowHeight + 1) * row;
 
 		return `<div class="webix_resizer ${activeClass}" data-col="${col}" style="position:absolute;top:${topOffset}px;left:${left}px;height:${height}px;">
-        <span class="wxi-stretch"></span>
+        <span class="webix_icon wxi-stretch"></span>
     </div>`;
 	},
 	_summ_next: function(heights, start, i){
@@ -901,8 +901,10 @@ const api = {
 		if (this._getScrollState_touch)
 			return this._getScrollState_touch();
 
-		const diff = this._render_scroll_shift ? 0 : (this._render_scroll_diff||0);
-		return { x:(this._scrollLeft||0), y:(this._scrollTop+diff) };
+		const x = this._scrollLeft || 0;
+		const y = this._scrollTop || 0;
+		const diff = this._render_scroll_shift ? 0 : this._render_scroll_diff || 0;
+		return { x, y: y + diff };
 	},
 	showItem:function(id){
 		this.showItemByIndex(this.getIndexById(id), -1);
@@ -1298,20 +1300,32 @@ const api = {
 			this.callEvent("onRowResize", [rowId, height, old_height]);
 		}
 	},
-	_onscroll_y:function(value){
-		var scrollChange = (this._scrollTop !== value);
-
+	_setTopScroll:function(value, hidden){
 		this._scrollTop = value;
-		if (!this._settings.prerender){
+
+		if (!hidden && !this._settings.prerender) {
 			this._check_rendered_cols();
-		} else if (env.touch){
+			return;
+		}
+
+		if (env.touch) {
 			this._sync_y_scroll(-value, "0ms");
 		} else {
-			var conts = this._body.childNodes;
-			for (var i = 0; i < conts.length; i++){
+			const conts = this._body.childNodes;
+			for (let i = 0; i < conts.length; i++){
 				conts[i].scrollTop = value;
 			}
 		}
+	},
+	_onscroll_y:function(value){
+		if (!this.isVisible()) {
+			this._setTopScroll(value, true);
+			return;
+		}
+
+		const scrollChange = (this._scrollTop !== value);
+
+		this._setTopScroll(value);
 
 		if (env.$customScroll) CustomScroll._update_scroll(this._body);
 		if (scrollChange){
@@ -1321,8 +1335,10 @@ const api = {
 	},
 	_setLeftScroll:function(value){
 		this._scrollLeft = value;
-		if (env.touch)
-			return this._sync_x_scroll(-value, "0ms");
+		if (env.touch) {
+			this._sync_x_scroll(-value, "0ms");
+			return;
+		}
 
 		this._body.childNodes[1].scrollLeft = value;
 		if (this._settings.header)
@@ -1331,7 +1347,12 @@ const api = {
 			this._footer.childNodes[1].scrollLeft = value;
 	},
 	_onscroll_x:function(value){
-		var scrollChange = (this._scrollLeft !== value);
+		if (!this.isVisible()) {
+			this._setLeftScroll(value);
+			return;
+		}
+		
+		const scrollChange = (this._scrollLeft !== value);
 		if (this._renderDelay)
 			this._delayedLeftScroll = value;
 		else
@@ -1618,7 +1639,7 @@ const api = {
 		const count = Math.max(conf.count, (this._settings.datafetch || this._settings.loadahead || 0));
 		const start = direction ? conf.start : (conf.last - count + 1);
 
-		if (this._maybe_loading_already(conf.count, conf.start)) return;
+		if (this._maybe_loading_already(conf.start, conf.count, {start, count})) return;
 		this._active_load_next = this.loadNext(count, start).finally(() => this._active_load_next = null);
 	},
 	// necessary for safari only
@@ -1948,7 +1969,7 @@ const api = {
 			this._size_header_footer_fix();
 		}
 
-		this._x_scroll.sizeTo(this._content_width-this._scrollSizeY);
+		this._x_scroll.sizeTo(this._content_width-this._scrollSizeY, this._header_height, this._footer_height);
 		this._x_scroll.define("scrollWidth", this._dtable_width+this._left_width+this._right_width);
 	},
 	$getSize:function(dx, dy){

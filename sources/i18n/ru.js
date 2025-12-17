@@ -117,6 +117,9 @@ const ru = {
 	},
 	timeboard:{
 		seconds: "Секунды"
+	},
+	colorboard: {
+		clear: "Удалить цвет"
 	}
 };
 

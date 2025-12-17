@@ -117,6 +117,9 @@ const es = {
 	},
 	timeboard:{
 		seconds: "segundos"
+	},
+	colorboard: {
+		clear: "Quitar color"
 	}
 };
 

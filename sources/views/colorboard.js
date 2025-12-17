@@ -9,6 +9,7 @@ import color from "../webix/color";
 import KeysNavigation from "../core/keysnavigation";
 import EventSystem from "../core/eventsystem";
 import base from "../views/view";
+import i18n from "../webix/i18n";
 
 const api = {
 	name:"colorboard",
@@ -17,8 +18,8 @@ const api = {
 			return `<div class="webix_color_item" style="background-color:${obj.val};"></div>`;
 		},
 		palette:null,
-		height:250,
 		width:260,
+		height: 250,
 		cols:11,
 		rows:10,
 		minLightness:0.15,
@@ -29,7 +30,6 @@ const api = {
 	},
 	$init:function(){
 		_event(this._viewobj, "click", bind(function(e){
-
 			// prevent selection the main item container
 			const node = e.target.parentNode;
 			let value = locate(node, /*@attr*/"webix_val");
@@ -44,6 +44,13 @@ const api = {
 				this.callEvent("onItemClick", [value, e]);
 				if (value != oldvalue)
 					this.callEvent("onSelect", [value]);
+			}
+
+			if (locate(e.target, /*@attr*/"webix_color_clear") || locate(node, /*@attr*/"webix_color_clear")) {
+				if (this._settings.value) {
+					this.setValue("", "user");
+					this.callEvent("onSelect", []);
+				}
 			}
 		}, this));
 
@@ -99,6 +106,15 @@ const api = {
 	},
 	value_setter:function(value){
 		return this.$prepareValue(value);
+	},
+	clear_setter: function(value) {
+		const clearHeight = $active.buttonHeight - 4;
+		// the default is always 250, regardless of 'Reset color' button
+		if (this._settings.height == this.defaults.height + (value ? 0 : clearHeight)) {
+			this.config.height = this.defaults.height + (value ? clearHeight : 0);
+			this.resize();
+		}
+		return value;
 	},
 	setValue:function(value, config){
 		value = this.$prepareValue(value);
@@ -326,11 +342,19 @@ const api = {
 		const deltaWidth = padding*2 + padding*(firstRow.length-1);
 		const deltaHeight = padding*2 + padding*(single ? palette.length-1 : 0);
 
-		let width = this.$width - deltaWidth,
-			height =  this.$height - deltaHeight,
-			widths = [];
+		let html = "";
 
-		let html = `<div class="webix_color_palette ${"webix_palette_"+type}" role="rowgroup">`;
+		let clearHeight = 0;
+		if (this._settings.clear) {
+			clearHeight = $active.buttonHeight - 4;
+			html += `<div role="button" tabindex="0" style="height:${clearHeight}px;" class="webix_color_clear" ${/*@attr*/"webix_color_clear"}="true"><span class='webix_icon wxi-clear-colors'></span>${i18n.colorboard.clear}</div>`;
+		}
+
+		let width = this.$width - deltaWidth,
+			height =  this.$height - deltaHeight - clearHeight,
+			widths = [];
+		
+		html += `<div class="webix_color_palette webix_palette_${type}" role="rowgroup">`;
 		
 		for(let i=0; i < firstRow.length; i++){
 			widths[i] = Math.floor(width/(firstRow.length - i));

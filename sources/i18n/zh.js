@@ -117,6 +117,9 @@ const zh = {
 	},
 	timeboard:{
 		seconds: "秒"
+	},
+	colorboard: {
+		clear: "移除颜色"
 	}
 };
 

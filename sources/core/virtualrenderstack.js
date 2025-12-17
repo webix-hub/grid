@@ -200,15 +200,15 @@ const VirtualRenderStack ={
 		if (this._unrendered_area.length){
 			//we have some data to load
 			//detect borders
-			var from = this._unrendered_area[0];
-			var to = this._unrendered_area.pop()+1;
-			if (to>from){
+			const from = this._unrendered_area[0];
+			const to = this._unrendered_area.pop()+1;
+			if (to > from){
 				//initiate data loading
-				var count = to - from;
-				if (this._maybe_loading_already(count, from)) return;
+				const count = to - from;
+				const nextCount = Math.max(count, (this._settings.datafetch||this._settings.loadahead||0));
+				if (this._maybe_loading_already(from, count, {start: from, count: nextCount})) return;
 
-				count = Math.max(count, (this._settings.datafetch||this._settings.loadahead||0));
-				this.loadNext(count, from);
+				this.loadNext(nextCount, from);
 			}
 		}
 	},

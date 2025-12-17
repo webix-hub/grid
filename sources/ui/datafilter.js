@@ -5,7 +5,7 @@ import {$$} from "../ui/core";
 import i18n from "../webix/i18n";
 import {_event} from "../webix/htmlevents";
 import wDate from "../core/date";
-import {appendCssClass} from "./helpers";
+import {appendCssClass, handleCompositionAwareInput} from "./helpers";
 
 const datafilter = {
 	textWaitDelay:500,
@@ -71,7 +71,7 @@ const datafilter = {
 			node._comp_id = master._settings.id;
 			if (value.value && this.getValue(node) != value.value) this.setValue(node, value.value);
 			node.onclick = preventEvent;
-			_event(node, "keydown", this._on_key_down);
+			handleCompositionAwareInput(node, "keydown", e => this._on_key_down.call(node, e));
 		},
 		render:function(master, config){
 			if (this.init) this.init(config);

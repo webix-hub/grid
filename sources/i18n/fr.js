@@ -110,6 +110,9 @@ const fr = {
 	},
 	timeboard:{
 		seconds: "secondes"
+	},
+	colorboard: {
+		clear: "Supprimer la couleur"
 	}
 };
 

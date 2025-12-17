@@ -1120,7 +1120,6 @@ button,
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: "Webix Material Icons";
   font-size: 24px;
   width: 20px;
   height: 20px;
@@ -2043,6 +2042,18 @@ div.webix_modal_cover {
 .webix_palette_material .webix_color_row > div {
   margin: 0 4px 4px 0;
 }
+.webix_color_clear {
+  padding: 8px;
+  cursor: pointer;
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  box-sizing: border-box;
+  font-weight: bold;
+}
+.webix_color_clear .wxi-clear-colors {
+  margin-right: 4px;
+}
 .webix_color_area {
   width: 100%;
   height: 100%;
@@ -2690,7 +2701,7 @@ div.webix_modal_cover {
   font-size: 13px;
   overflow: hidden;
 }
-.webixtoolbarlabel {
+.webix_view.webix_measure_size .webixtoolbarlabel {
   font-size: 16px;
 }
 .webix_el_text input,
@@ -5422,6 +5433,9 @@ a:active .webix_custom_radio {
 .webix_timeboard .webix_colon_template .webix_template {
   font-size: 25px;
 }
+.webix_color_clear:hover {
+  color: #3498db;
+}
 .webix_skin_mark {
   height: 210px;
 }
@@ -5573,6 +5587,9 @@ a:active .webix_custom_radio {
 }
 .wxi-stretch:before {
   content: "\F047";
+}
+.wxi-clear-colors:before {
+  content: "\F048";
 }
 /*predefined styles for text lables inside a item*/
 .webix_strong {

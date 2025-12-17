@@ -1,4 +1,4 @@
-import {_to_array, _power_array, isUndefined, copy} from "../../webix/helpers";
+import {_to_array, _power_array, isUndefined, copy, isArray} from "../../webix/helpers";
 import {assert} from "../../webix/debug";
 import {$$} from "../../ui/core";
 
@@ -366,82 +366,145 @@ const Mixin = {
 			}
 		}
 	},
-	_shouldKeepView(view, columns) {
+	_shouldKeepView(view, columns = []) {
 		const viewId = view.config.id;
-		
+
 		// protected views (headermenu, subviews) should not be removed
-		if (viewId === this._settings.headermenu || 
-			(this._subViewStorage && this._subViewStorage[viewId])) {
+		if (
+			viewId === this._settings.headermenu ||
+			(this._subViewStorage && this._subViewStorage[viewId])
+		) {
 			return true;
 		}
-		
+
 		for (const column of columns) {
-			if (column.header && typeof column.header !== "string") {
+			// column options
+			// check if the collection has already been initialized and preserve it when needed
+			if (
+				column.collection &&
+				column.collection.config &&
+				column.collection.config.id === viewId
+			)
+				return true;
+
+			if (isArray(column.header)) {
 				for (const item of column.header) {
 					if (this._headerItemReferencesView(item, viewId)) return true;
 				}
 			}
-			
-			if (column.footer && typeof column.footer !== "string") {
+
+			if (isArray(column.footer)) {
 				for (const item of column.footer) {
 					if (this._headerItemReferencesView(item, viewId)) return true;
 				}
 			}
 		}
-		
+
 		return false;
 	},
 	_headerItemReferencesView(item, viewId) {
 		if (!item) return false;
 		// data collections
-		if (item.options && item.options.config && item.options.config.id === viewId) return true;
+		if (
+			item.options &&
+			item.options.config &&
+			item.options.config.id === viewId
+		)
+			return true;
 		// richselectFilter and excelFilter contain references to views
-		const view = item.richselect ? $$(item.richselect) : item.filter ? $$(item.filter) : null;
-		
+		const view = $$(item.richselect || item.filter);
 		return view && view.config && view.config.id === viewId;
+	},
+	_getFullColumnsArray() {
+		const horder = this._hidden_column_order;
+		const hhash = this._hidden_column_hash;
+		const visibleCols = this._settings.columns;
+
+		if (!horder.length) {
+			return visibleCols;
+		}
+
+		const currentIds = {};
+		for (let i = 0; i < visibleCols.length; i++) {
+			currentIds[visibleCols[i].id] = true;
+		}
+
+		for (const id in hhash) {
+			if (hhash[id] && hhash[id].hidden) {
+				currentIds[id] = true;
+			}
+		}
+
+		const fullColumns = [];
+		let visibleIndex = 0;
+
+		for (let i = 0; i < horder.length; i++) {
+			const id = horder[i];
+			if (!currentIds[id]) continue;
+
+			if (hhash[id] && hhash[id].hidden) {
+				fullColumns.push(hhash[id]);
+			} else {
+				if (visibleIndex < visibleCols.length) {
+					fullColumns.push(visibleCols[visibleIndex]);
+					visibleIndex++;
+				}
+			}
+		}
+
+		while (visibleIndex < visibleCols.length) {
+			fullColumns.push(visibleCols[visibleIndex]);
+			visibleIndex++;
+		}
+
+		return fullColumns;
 	},
 	refreshColumns:function(columns){
 		if (columns) {
 			columns = copy(columns, null, true);
 			// clean up the config before using it (we may be reusing a previously initialized config to some extent)
 			this._clean_config_struct(columns);
+		} else {
+			// use new reference if it was changed
+			// otherwise rebuild the full columns array (visible + hidden)
+			columns =
+				this._settings.columns !== this._columns
+					? this._settings.columns
+					: this._getFullColumnsArray();
 		}
-
-		const columnsUpdated = (this._columns.length !== 0 && this._settings.columns !== this._columns) || !!columns;
 
 		this._dtable_column_refresh = true;
 
-		if (columnsUpdated) {
-			if (this._destroy_with_me.length) {
-				this._destroy_with_me = this._destroy_with_me.filter(view => {
-					if (this._shouldKeepView(view, columns)) return true;
-					view.destructor();
-					return false;
-				});
-			}
-
-			this._clear_hidden_state();
-			this._active_headers = {};
-			this._filter_elements = {};
-			this._collection_handlers = {};
-			this._has_active_headers = false;
+		if (this._destroy_with_me.length) {
+			this._destroy_with_me = this._destroy_with_me.filter((view) => {
+				if (this._shouldKeepView(view, columns)) return true;
+				view.destructor();
+				return false;
+			});
 		}
 
+		this._clear_hidden_state();
+		this._active_headers = {};
+		this._filter_elements = {};
+		this._collection_handlers = {};
+		this._has_active_headers = false;
 		this._columns_pull = {};
+
 		//clear rendered data
-		for (let i=0; i<this._columns.length; i++){
+		for (let i = 0; i < this._columns.length; i++) {
 			var col = this._columns[i];
 			this._columns_pull[col.id] = col;
 			col.attached = col.node = null;
 		}
-		for (let i=0; i<3; i++){
+
+		for (let i = 0; i < 3; i++) {
 			this._header.childNodes[i].innerHTML = "";
 			this._footer.childNodes[i].innerHTML = "";
 			this._body.childNodes[i].firstChild.innerHTML = "";
 		}
 
 		//render new structure
-		this._columns = this._settings.columns = (columns || this._settings.columns);
+		this._columns = this._settings.columns = columns;
 		this._rightSplit = this._columns.length - (this._settings.rightSplit || 0);
 
 		this._dtable_fully_ready = 0;
@@ -450,9 +513,6 @@ const Mixin = {
 
 		this.callEvent("onStructureUpdate");
 		this.render();
-
-		// apply new filters in case the columns were updated
-		if (columnsUpdated) this.filterByAll();
 
 		this._dtable_column_refresh = false;
 	},

@@ -120,6 +120,9 @@ const en = {
 	},
 	timeboard:{
 		seconds: "Seconds"
+	},
+	colorboard: {
+		clear: "Remove color"
 	}
 };
 

@@ -117,6 +117,9 @@ const be = {
 	},
 	timeboard:{
 		seconds: "Секунды"
+	},
+	colorboard: {
+		clear: "Выдаліць колер"
 	}
 };
 

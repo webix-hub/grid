@@ -4,9 +4,8 @@ import UIManager from "../core/uimanager";
 import {preventEvent} from "../webix/html";
 import {protoUI, $$} from "../ui/core";
 import {toFunctor, extend, copy, isUndefined, delay, bind, toNode} from "../webix/helpers";
-import {_event} from "../webix/htmlevents";
 import template from "../webix/template";
-
+import {handleCompositionAwareInput} from "../ui/helpers";
 
 // #include ui/window.js
 
@@ -230,7 +229,7 @@ const api = {
 				this.getParentView().setMasterValue({ value: date }, false, "user");
 			});
 		} else if (type == "colorboard"){
-			list.attachEvent("onItemClick", function(value){
+			list.attachEvent("onSelect", function(value){
 				this.getParentView().setMasterValue({ value: value }, false, "user");
 			});
 		} else if (type == "timeboard"){
@@ -256,12 +255,15 @@ const api = {
 		} else
 			node = toNode(input);
 
-		if(input != document.body)
-			_event(node,"keydown",e => {
-				if (input.config ? (!input.config.readonly) : (!node.getAttribute("readonly")))
-					this._suggestions(e, node);
+		if (input !== document.body) {
+			handleCompositionAwareInput(node, "keydown", (e) => {
+				const isReadonly = input.config
+					? input.config.readonly
+					: node.getAttribute("readonly");
+				if (!isReadonly) this._suggestions(e, node);
 			});
-		
+		}
+
 		if(input._getInputDiv)
 			node = input._getInputDiv();
 		

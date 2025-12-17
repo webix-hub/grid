@@ -1,6 +1,6 @@
 import {isUndefined} from "../../webix/helpers";
-import {_event} from "../../webix/htmlevents";
 import EditAbility from "../../core/editability";
+import {handleCompositionAwareInput} from "../../ui/helpers";
 
 
 // #include core/drag.js
@@ -79,7 +79,7 @@ const Mixin = {
 			type.afterRender();
 		
 		if (this._settings.liveValidation){
-			_event(type.node, "keyup", this._bind_live_validation(id, this));
+			handleCompositionAwareInput(type.node, "keyup", this._bind_live_validation(id, this));
 			this.validateEditor(id);
 		}
 
