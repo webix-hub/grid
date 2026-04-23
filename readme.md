@@ -1,4 +1,4 @@
-Webix Grid v.11.3.0
+Webix Grid v.11.4.0
 ================
 
 [![npm version](https://badge.fury.io/js/webix-grid-gpl.svg)](https://badge.fury.io/js/webix-grid-gpl)
@@ -40,4 +40,4 @@ you can get help at https://grid.webix.com/forum/
 
 
 
-(c) XB Software Ltd. 2025
+(c) XB Software Ltd. 2026
