@@ -1,5 +1,5 @@
-// Type definitions for Webix UI 10.2
-// Project: https://webix.com
+// Type definitions for Webix UI 11.2
+// Project: https://grid.webix.com
 
 declare namespace webix {
 
@@ -295,6 +295,10 @@ declare namespace webix {
 		size?: number;
 		headerOnly?: boolean;
 	}
+	type WebixResizeColConfig = WebixResizeRowColConfig & {
+		icon?: boolean;
+		live?: boolean;
+	}
 	type WebixFormatConfig = {
 		parse: WebixCallback;
 		edit: WebixCallback;
@@ -524,13 +528,14 @@ declare namespace webix {
 		spans?: boolean;
 	}
 	type WebixDatatableCellPos = {
-		row: number;
+		row: string | number;
 		column: string | number;
 		rind: number;
 		cind: number;
 		span: number;
 	}
-	type WebixDataProcessorFullConfig	= {
+	type WebixDatatableItemPos = Omit<Partial<WebixDatatableCellPos>, "span">;
+	type WebixDataProcessorFullConfig = {
 		id?: string | number;
 		master?: string | webix.ui.baseview;
 	} & WebixDataProcessorConfig
@@ -1048,6 +1053,30 @@ declare namespace webix {
 		filters?: any[];
 		groupBy?: string;
 	}
+
+	type WebixRichtextLayoutMode = "classic" | "document";
+	type WebixRichtextValueFormat = "html" | "text" | "raw";
+
+	type WebixRichtextToolbarButton = "style" | "font-family" | "font-size" | "bold" | "italic" | "underline" | "strike" | "subscript" | "superscript" | "text-color" | "background-color" | "paint-format" | "align-left" | "align-center" | "align-right" | "align-justify" | "line-height" | "indent" | "outdent" | "link" | "image" | "bulleted-list" | "numbered-list" | "undo" | "redo" | "print" | "fullscreen" | "mode" | "clear" | "emojis" | "characters";
+	type WebixRichtextToolbarGroup = "file" | "view" | "history" | "font" | "align" | "line-height" | "indent" | "insert" | "lists" | "clear" | (string & {});
+	type WebixRichtextToolbarConfig = (WebixRichtextToolbarButton | obj)[];
+	type WebixRichtextToolbarGroupConfig = {
+		[K in WebixRichtextToolbarGroup]?: boolean | WebixRichtextToolbarConfig;
+	};
+
+	type WebixRichtextMenubarOption = "file" | "new" | "import" | "export" | "pdf" | "docx" | "print" | "edit" | "undo" | "redo" | "cut" | "copy" | "paste" | "view" | "mode" | "fullscreen" | "insert" | "link" | "image" | "format" | "text" | "bold" | "italic" | "underline" | "strike" | "superscript" | "subscript" | "style" | "font-family" | "font-size" | "align" | "align-left" | "align-center" | "align-right" | "align-justify" | "line-height" | "indent" | "outdent" | "lists" | "bulleted-list" | "numbered-list" | "clear" | "help" | "help-more" | "hotkeys" | "hr" | "emojis" | "characters";
+	type WebixRichtextMenubarOptionConfig = {
+		id?: WebixRichtextMenubarOption | (string & {});
+		value?: string;
+		data?: WebixRichtextMenubarOptionConfig[];
+		[key: string]: any;
+	} | { $template: "Separator" };
+	type WebixRichtextMenubarGroup = "file" | "edit" | "view" | "insert" | "format" | "help" | (string & {});
+	type WebixRichtextMenubarConfig = (WebixRichtextMenubarOption | WebixRichtextMenubarOptionConfig)[];
+	type WebixRichtextMenubarGroupConfig = {
+		[K in WebixRichtextMenubarGroup]?: boolean | WebixRichtextMenubarConfig;
+	};
+
 	type WebixJetAppWrapper = {
 		$$<T extends webix.ui.baseview>(name:string): T;
 		callEvent(name: string, params?: any[]): boolean;
@@ -1785,12 +1814,12 @@ declare namespace webix {
 		};
 	}
 	interface promise {
-		new (executor: (resolve: (value? : any) => void, reject: (reason? :any) => void) => void) : Promise<any>;
-		all(promises:Promise<any>[]):Promise<any>;
-		defer():Omit<promise, "defer">;
-		race(promises:Promise<any>[]):Promise<any>;
-		reject(value:any):Promise<any>;
-		resolve(value:any):Promise<any>;
+		new (executor: (resolve: (value? : any) => void, reject: (reason? :any) => void) => void): Promise<any>;
+		all(promises:Promise<any>[]): Promise<any>;
+		defer(): Omit<webix.promise, "defer" | "race" | "all"> & Promise<any>;
+		race(promises:Promise<any>[]): Promise<any>;
+		reject(value:any): Promise<any>;
+		resolve(value:any): Promise<any>;
 	}
 	interface rules {
 		isChecked(value:any):boolean;
@@ -2041,6 +2070,7 @@ declare namespace webix {
 	function toPNG(id:string|webix.ui.baseview, options?:string|obj):Promise<any>;
 	function type(obj:obj, data:obj):void;
 	function ui<T extends webix.ui.baseview>(config:obj, parent?:obj|string, replacement?:obj|string|number):T;
+	function grid<T extends webix.ui.baseview>(config:obj, parent?:obj|string, replacement?:obj|string|number):T;
 	function uid():number;
 	function unblockEvent():void;
 	function wrap(target:WebixCallback, source:WebixCallback):WebixCallback;
@@ -2178,7 +2208,7 @@ declare namespace webix {
 		serialize(all?:boolean):any[];
 		setBindData(data:obj, key:string|number):void;
 		setCursor(cursor:string|number):void;
-		sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+		sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 		sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 		unbind():void;
 		unblockEvent():void;
@@ -2243,7 +2273,7 @@ declare namespace webix {
 		refresh(id?:number|string):void;
 		remove(id:string|number|any[]):void;
 		serialize(all?:boolean):any[];
-		sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+		sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 		sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 		updateItem(id:number|string, data:obj):void;
 		waitSave(handler:WebixCallback):Promise<any>;
@@ -2372,7 +2402,7 @@ declare namespace webix {
 		serialize(all?:boolean):any[];
 		setDriver(type:string):void;
 		silent(code:WebixCallback):void;
-		sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+		sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 		sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 		unblockEvent():void;
 		unsync():void;
@@ -2747,7 +2777,7 @@ declare namespace webix {
 		serialize(all?:boolean):any[];
 		setBindData(data:obj, key:string|number):void;
 		setCursor(cursor:string|number):void;
-		sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+		sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 		sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 		unbind():void;
 		unblockEvent():void;
@@ -3105,7 +3135,7 @@ declare namespace webix {
 			minHeight?: number;
 			minWidth?: number;
 			on?: EventHash;
-			override?: any[];
+			override?: Map<any, any>;
 			width?: number;
 		}
 		type jetappEventName ='onAfterScroll'|'onBlur'|'onDestruct'|'onEnter'|'onFocus'|'onInit'|'onLongTouch'|'onSwipeX'|'onSwipeY'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onViewResize'|'onViewShow';
@@ -3239,7 +3269,7 @@ declare namespace webix {
 			setPage(page:number):void;
 			show(force?:boolean, animation?:boolean):void;
 			showItem(id:string|number):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -3840,7 +3870,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLButtonElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -4187,7 +4217,7 @@ declare namespace webix {
 			serialize(all?:boolean):any[];
 			show(force?:boolean, animation?:boolean):void;
 			showSeries(index:number):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -4243,10 +4273,13 @@ declare namespace webix {
 			minWidth?: number;
 			mode?: string;
 			on?: EventHash;
-			override?: any[];
+			override?: Map<any, any>;
 			reactions?: boolean;
 			search?: string;
 			token?: string;
+			typingDelay?: number;
+			typingLoadedDelay?: number;
+			typingMode?: boolean;
 			url?: string;
 			userId?: number;
 			voiceMessages?: boolean;
@@ -4359,7 +4392,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLButtonElement|HTMLInputElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -4655,7 +4688,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLElement|HTMLInputElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getPopup():webix.ui.baseview;
@@ -4899,7 +4932,6 @@ declare namespace webix {
 			options?: string|any[]|webix.ui.baseview|WebixDataStorage|webix.ui.suggestConfig & {[key: string]: any};
 			placeholder?: string;
 			popup?: string;
-			popupWidth?: number;
 			readonly?: boolean;
 			relatedAction?: string;
 			relatedView?: string;
@@ -4927,7 +4959,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLInputElement;
 			getList():webix.ui.baseview;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
@@ -5135,7 +5167,7 @@ declare namespace webix {
 			yCount?: number;
 			zIndex?: number;
 		}
-		type contextmenuEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeShow'|'onBeforeSort'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onHide'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMenuItemClick'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onSelectChange'|'onShow'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewMove'|'onViewMoveEnd'|'onViewResize'|'onViewShow';
+		type contextmenuEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeShow'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onHide'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMenuItemClick'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onSelectChange'|'onShow'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewMove'|'onViewMoveEnd'|'onViewResize'|'onViewShow';
 		class contextmenu implements webix.ui.baseview{
 			add(obj:obj, index?:number):string|number;
 			addCss(id:string|number, css:string, silent?:boolean):void;
@@ -5222,7 +5254,7 @@ declare namespace webix {
 			showItem(id:string|number):void;
 			showMenuItem(id:string|number):void;
 			sizeToContent():void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -5330,7 +5362,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLInputElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -5556,7 +5588,7 @@ declare namespace webix {
 			setValue(values:any[]):void;
 			show(force?:boolean, animation?:boolean):void;
 			showBatch(name:string, mode?:boolean):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -5740,7 +5772,7 @@ declare namespace webix {
 			prerender?: boolean;
 			ready?: WebixCallback;
 			removeMissed?: boolean;
-			resizeColumn?: boolean|WebixResizeRowColConfig;
+			resizeColumn?: boolean|WebixResizeColConfig;
 			resizeRow?: boolean|WebixResizeRowColConfig;
 			rightSplit?: number;
 			rowHeight?: number;
@@ -5768,7 +5800,7 @@ declare namespace webix {
 			width?: number;
 			yCount?: number;
 		}
-		type datatableEventName ='onAfterAdd'|'onAfterAreaAdd'|'onAfterAreaRemove'|'onAfterBlockSelect'|'onAfterColumnDrop'|'onAfterColumnDropOrder'|'onAfterColumnHide'|'onAfterColumnShow'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterEditStart'|'onAfterEditStop'|'onAfterFilter'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onAreaDrag'|'onBeforeAdd'|'onBeforeAreaAdd'|'onBeforeAreaRemove'|'onBeforeBlockSelect'|'onBeforeColumnDrag'|'onBeforeColumnDrop'|'onBeforeColumnDropOrder'|'onBeforeColumnHide'|'onBeforeColumnShow'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeEditStart'|'onBeforeEditStop'|'onBeforeFilter'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onCheck'|'onCollectValues'|'onColumnGroupCollapse'|'onColumnResize'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEditorChange'|'onEnter'|'onFocus'|'onHeaderClick'|'onItemClick'|'onItemDblClick'|'onItemSingleClick'|'onKeyPress'|'onLiveEdit'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onResize'|'onRowResize'|'onScrollX'|'onScrollY'|'onSelectChange'|'onStructureLoad'|'onStructureUpdate'|'onSubViewClose'|'onSubViewCreate'|'onSubViewOpen'|'onSubViewRender'|'onSwipeX'|'onSwipeY'|'onSyncScroll'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
+		type datatableEventName ='onAfterAdd'|'onAfterAreaAdd'|'onAfterAreaRemove'|'onAfterBlockSelect'|'onAfterColumnDrop'|'onAfterColumnDropOrder'|'onAfterColumnHide'|'onAfterColumnShow'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterEditStart'|'onAfterEditStop'|'onAfterFilter'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onAreaDrag'|'onBeforeAdd'|'onBeforeAreaAdd'|'onBeforeAreaRemove'|'onBeforeBlockSelect'|'onBeforeColumnDrag'|'onBeforeColumnDrop'|'onBeforeColumnDropOrder'|'onBeforeColumnHide'|'onBeforeColumnShow'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeEditStart'|'onBeforeEditStop'|'onBeforeFilter'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onCheck'|'onCollectValues'|'onColumnGroupCollapse'|'onColumnResize'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEditorChange'|'onEnter'|'onFocus'|'onHeaderClick'|'onItemClick'|'onItemDblClick'|'onItemSingleClick'|'onKeyPress'|'onLiveEdit'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onMoveSelection'|'onPaste'|'onResize'|'onRowResize'|'onScrollX'|'onScrollY'|'onSelectChange'|'onStructureLoad'|'onStructureUpdate'|'onSubViewClose'|'onSubViewCreate'|'onSubViewOpen'|'onSubViewRender'|'onSwipeX'|'onSwipeY'|'onSyncScroll'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
 		class datatable implements webix.ui.baseview{
 			add(obj:obj, index?:number):string|number;
 			addCellCss(id:string, name:string, css:string, silent:boolean):void;
@@ -5830,7 +5862,7 @@ declare namespace webix {
 			getIdByIndex(index:number|string):string|number;
 			getIndexById(id:number|string):number;
 			getItem(id:number|string):obj;
-			getItemNode(id:string|number):HTMLElement;
+			getItemNode(id:string|number|WebixDatatableItemPos):HTMLElement;
 			getLastId():number|string;
 			getNextId(id:number|string, step?:number):string|number;
 			getNode():HTMLElement;
@@ -5908,7 +5940,7 @@ declare namespace webix {
 			showItem(id:string|number):void;
 			showItemByIndex(index:number):void;
 			showOverlay(message:string):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -6007,7 +6039,7 @@ declare namespace webix {
 			xCount?: number;
 			yCount?: number;
 		}
-		type dataviewEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
+		type dataviewEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
 		class dataview implements webix.ui.baseview{
 			add(obj:obj, index?:number):string|number;
 			addCss(id:string|number, css:string, silent?:boolean):void;
@@ -6078,7 +6110,7 @@ declare namespace webix {
 			setPage(page:number):void;
 			show(force?:boolean, animation?:boolean):void;
 			showItem(id:string|number):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -6264,7 +6296,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLElement|HTMLInputElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getPopup():webix.ui.baseview;
@@ -6429,7 +6461,7 @@ declare namespace webix {
 			css?: string|obj;
 			disabled?: boolean;
 			editable?: boolean;
-			format?: string|WebixCallback;
+			format?: string|obj;
 			gravity?: number;
 			height?: number;
 			hidden?: boolean;
@@ -6489,7 +6521,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLElement|HTMLInputElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getPopup():webix.ui.baseview;
@@ -6641,7 +6673,7 @@ declare namespace webix {
 			minHeight?: number;
 			minWidth?: number;
 			on?: EventHash;
-			override?: any[];
+			override?: Map<any, any>;
 			systemParams?: obj;
 			tileAlign?: string;
 			tileLayout?: string;
@@ -6742,7 +6774,7 @@ declare namespace webix {
 			width?: number;
 			zoom?: number;
 		}
-		type diagramEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBindRequest'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onLoadError'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onSelectChange'|'onViewShow';
+		type diagramEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onLoadError'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onSelectChange'|'onViewShow';
 		class diagram implements webix.ui.baseview{
 			add(obj:obj, index?:number):string|number;
 			addCss(id:string|number, css:string, silent?:boolean):void;
@@ -6811,7 +6843,7 @@ declare namespace webix {
 			serialize(all?:boolean):any[];
 			setShape(id:string, obj:obj):void;
 			show(force?:boolean, animation?:boolean):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -6862,7 +6894,7 @@ declare namespace webix {
 			minItemWidth?: number;
 			minWidth?: number;
 			on?: EventHash;
-			override?: any[];
+			override?: Map<any, any>;
 			save?: WebixCallback;
 			shapes?: any[];
 			template?: string|WebixCallback;
@@ -6929,6 +6961,7 @@ declare namespace webix {
 			height?: number;
 			hidden?: boolean;
 			id?: string|number;
+			limit?: number;
 			locale?: WebixLocaleConfig;
 			maxHeight?: number;
 			maxWidth?: number;
@@ -6936,7 +6969,7 @@ declare namespace webix {
 			minWidth?: number;
 			mode?: string;
 			on?: EventHash;
-			override?: any[];
+			override?: Map<any, any>;
 			path?: string;
 			player?: boolean;
 			search?: string;
@@ -6971,6 +7004,7 @@ declare namespace webix {
 			mapEvent(map:WebixEventMap):void;
 			queryView(config:webix.ui.baseviewConfig & {[key: string]: any}|WebixCallback|string, mode?:string):any;
 			resize():void;
+			selectFile(id:string):Promise<any>;
 			show(force?:boolean, animation?:boolean):void;
 			unblockEvent():void;
 		
@@ -6986,6 +7020,81 @@ declare namespace webix {
 			$view: HTMLElement;
 			$width: number;
 			config: docmanagerConfig;
+			name: string;
+		}
+		interface editorConfig{
+			view?: string;
+			animate?: boolean|WebixAnimate;
+			body?: webix.ui.baseviewConfig & {[key: string]: any};
+			borderless?: boolean;
+			compact?: boolean;
+			compactWidth?: number;
+			container?: string|HTMLElement;
+			css?: string|obj;
+			disabled?: boolean;
+			fullscreen?: boolean;
+			gravity?: number;
+			height?: number;
+			hidden?: boolean;
+			id?: string|number;
+			keyPressTimeout?: number;
+			layoutMode?: WebixRichtextLayoutMode;
+			locale?: WebixLocaleConfig;
+			maxHeight?: number;
+			maxWidth?: number;
+			menubar?: boolean|WebixRichtextMenubarGroupConfig|WebixRichtextMenubarConfig;
+			minHeight?: number;
+			minWidth?: number;
+			on?: EventHash;
+			override?: Map<any, any>;
+			toolbar?: boolean|WebixRichtextToolbarGroupConfig|WebixRichtextToolbarConfig;
+			upload?: string;
+			value?: string;
+			width?: number;
+		}
+		type editorEventName ='onChange'|'onDestruct'|'onInit'|'onMenuItemClick'|'onViewResize'|'onViewShow';
+		class editor implements webix.ui.baseview{
+			adjust():void;
+			app(app:obj):void;
+			attachEvent(type:editorEventName, functor:WebixCallback, id?:string):string|number;
+			bind(source:WebixBindSource, rule?:WebixCallback, format?:string):void;
+			blockEvent():void;
+			callEvent(name:string, params:any[]):boolean;
+			define(property:string|webix.ui.baseviewConfig & {[key: string]: any}, value?:any):void;
+			destructor():void;
+			detachEvent(id:string):void;
+			disable():void;
+			enable():void;
+			getChildViews():webix.ui.baseview[];
+			getFormView():webix.ui.baseview;
+			getNode():HTMLElement;
+			getParentView():webix.ui.baseview;
+			getService(service:string):obj;
+			getState():obj;
+			getTopParentView():webix.ui.baseview;
+			getValue(type?:WebixRichtextValueFormat):void;
+			hasEvent(name:string):boolean;
+			hide():void;
+			isEnabled():boolean;
+			isVisible():boolean;
+			mapEvent(map:WebixEventMap):void;
+			queryView(config:webix.ui.baseviewConfig & {[key: string]: any}|WebixCallback|string, mode?:string):any;
+			resize():void;
+			setValue(value:string, type?:WebixRichtextValueFormat):void;
+			show(force?:boolean, animation?:boolean):void;
+			unbind():void;
+			unblockEvent():void;
+		
+			$app: WebixJetAppWrapper;
+			$getSize(dx?:number, dy?:number):any[];
+			$height: number;
+			$scope: obj;
+			$setNode: any;
+			$setSize(x:number, y:number):boolean;
+			$skin: WebixCallback;
+			$view: HTMLElement;
+			$width: number;
+			config: editorConfig;
 			name: string;
 		}
 		interface excelviewerConfig{
@@ -7056,7 +7165,7 @@ declare namespace webix {
 			prerender?: boolean;
 			ready?: WebixCallback;
 			removeMissed?: boolean;
-			resizeColumn?: boolean|WebixResizeRowColConfig;
+			resizeColumn?: boolean|WebixResizeColConfig;
 			resizeRow?: boolean|WebixResizeRowColConfig;
 			rightSplit?: number;
 			rowHeight?: number;
@@ -7084,7 +7193,7 @@ declare namespace webix {
 			width?: number;
 			yCount?: number;
 		}
-		type excelviewerEventName ='onAfterAdd'|'onAfterAreaAdd'|'onAfterAreaRemove'|'onAfterBlockSelect'|'onAfterColumnDrop'|'onAfterColumnDropOrder'|'onAfterColumnHide'|'onAfterColumnShow'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterEditStart'|'onAfterEditStop'|'onAfterFilter'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onAreaDrag'|'onBeforeAdd'|'onBeforeAreaAdd'|'onBeforeAreaRemove'|'onBeforeBlockSelect'|'onBeforeColumnDrag'|'onBeforeColumnDrop'|'onBeforeColumnDropOrder'|'onBeforeColumnHide'|'onBeforeColumnShow'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeEditStart'|'onBeforeEditStop'|'onBeforeFilter'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onCheck'|'onCollectValues'|'onColumnResize'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEditorChange'|'onEnter'|'onFocus'|'onHeaderClick'|'onItemClick'|'onItemDblClick'|'onItemSingleClick'|'onKeyPress'|'onLiveEdit'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onResize'|'onRowResize'|'onScrollX'|'onScrollY'|'onSelectChange'|'onStructureLoad'|'onStructureUpdate'|'onSubViewClose'|'onSubViewCreate'|'onSubViewOpen'|'onSubViewRender'|'onSwipeX'|'onSwipeY'|'onSyncScroll'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
+		type excelviewerEventName ='onAfterAdd'|'onAfterAreaAdd'|'onAfterAreaRemove'|'onAfterBlockSelect'|'onAfterColumnDrop'|'onAfterColumnDropOrder'|'onAfterColumnHide'|'onAfterColumnShow'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterEditStart'|'onAfterEditStop'|'onAfterFilter'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onAreaDrag'|'onBeforeAdd'|'onBeforeAreaAdd'|'onBeforeAreaRemove'|'onBeforeBlockSelect'|'onBeforeColumnDrag'|'onBeforeColumnDrop'|'onBeforeColumnDropOrder'|'onBeforeColumnHide'|'onBeforeColumnShow'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeEditStart'|'onBeforeEditStop'|'onBeforeFilter'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onCheck'|'onCollectValues'|'onColumnResize'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEditorChange'|'onEnter'|'onFocus'|'onHeaderClick'|'onItemClick'|'onItemDblClick'|'onItemSingleClick'|'onKeyPress'|'onLiveEdit'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onMoveSelection'|'onPaste'|'onResize'|'onRowResize'|'onScrollX'|'onScrollY'|'onSelectChange'|'onStructureLoad'|'onStructureUpdate'|'onSubViewClose'|'onSubViewCreate'|'onSubViewOpen'|'onSubViewRender'|'onSwipeX'|'onSwipeY'|'onSyncScroll'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
 		class excelviewer implements webix.ui.baseview{
 			add(obj:obj, index?:number):string|number;
 			addCellCss(id:string, name:string, css:string, silent:boolean):void;
@@ -7218,7 +7327,7 @@ declare namespace webix {
 			showItemByIndex(index:number):void;
 			showOverlay(message:string):void;
 			showSheet(name:string):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -7332,6 +7441,7 @@ declare namespace webix {
 			height?: number;
 			hidden?: boolean;
 			id?: string|number;
+			limit?: number;
 			locale?: WebixLocaleConfig;
 			maxHeight?: number;
 			maxWidth?: number;
@@ -7339,7 +7449,7 @@ declare namespace webix {
 			minWidth?: number;
 			mode?: string;
 			on?: EventHash;
-			override?: any[];
+			override?: Map<any, any>;
 			path?: string;
 			player?: boolean;
 			search?: string;
@@ -7373,6 +7483,7 @@ declare namespace webix {
 			mapEvent(map:WebixEventMap):void;
 			queryView(config:webix.ui.baseviewConfig & {[key: string]: any}|WebixCallback|string, mode?:string):any;
 			resize():void;
+			selectFile(id:string):Promise<any>;
 			show(force?:boolean, animation?:boolean):void;
 			unblockEvent():void;
 		
@@ -7715,6 +7826,7 @@ declare namespace webix {
 			container?: string|HTMLElement;
 			criticalPath?: boolean;
 			css?: string|obj;
+			date?: Date;
 			disabled?: boolean;
 			display?: string;
 			excludeHolidays?: boolean;
@@ -7731,7 +7843,7 @@ declare namespace webix {
 			minHeight?: number;
 			minWidth?: number;
 			on?: EventHash;
-			override?: any[];
+			override?: Map<any, any>;
 			preciseTimeUnit?: boolean;
 			projects?: boolean;
 			readonly?: boolean;
@@ -7873,7 +7985,7 @@ declare namespace webix {
 			setDisplayMode(mode:string):void;
 			setRegion(region:string):void;
 			show(force?:boolean, animation?:boolean):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -7912,6 +8024,7 @@ declare namespace webix {
 			id?: string|number;
 			keyPressTimeout?: number;
 			layerType?: string;
+			mapId?: string;
 			mapType?: string;
 			maxHeight?: number;
 			maxWidth?: number;
@@ -7922,6 +8035,7 @@ declare namespace webix {
 			removeMissed?: boolean;
 			save?: string|boolean|WebixDataProcessorConfig|WebixCallback;
 			scheme?: WebixDataScheme;
+			template?: WebixCallback;
 			url?: string|WebixCallback|WebixProxy;
 			width?: number;
 			zoom?: number;
@@ -7972,7 +8086,7 @@ declare namespace webix {
 			resize():void;
 			serialize(all?:boolean):any[];
 			show(force?:boolean, animation?:boolean):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -8230,7 +8344,7 @@ declare namespace webix {
 			xCount?: number;
 			yCount?: number;
 		}
-		type grouplistEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
+		type grouplistEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
 		class grouplist implements webix.ui.baseview{
 			add(obj:obj, index?:number, parentId?:string):string;
 			addCss(id:string|number, css:string, silent?:boolean):void;
@@ -8308,7 +8422,7 @@ declare namespace webix {
 			setPage(page:number):void;
 			show(force?:boolean, animation?:boolean):void;
 			showItem(id:string|number):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -8635,7 +8749,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLButtonElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -8755,7 +8869,7 @@ declare namespace webix {
 			datatype?: string;
 			delimiter?: string;
 			disabled?: boolean;
-			editor?: boolean|webix.ui.baseviewConfig & {[key: string]: any}[]|WebixKanbanEditorConfig;
+			editor?: boolean|(webix.ui.baseviewConfig & {[key: string]: any})[]|WebixKanbanEditorConfig;
 			gravity?: number;
 			height?: number;
 			hidden?: boolean;
@@ -8852,7 +8966,7 @@ declare namespace webix {
 			show(force?:boolean, animation?:boolean):void;
 			showBatch(name:string, mode?:boolean):void;
 			showEditor(obj?:obj):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -9094,7 +9208,7 @@ declare namespace webix {
 			xCount?: number;
 			yCount?: number;
 		}
-		type listEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
+		type listEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
 		class list implements webix.ui.baseview{
 			add(obj:obj, index?:number):string|number;
 			addCss(id:string|number, css:string, silent?:boolean):void;
@@ -9169,7 +9283,7 @@ declare namespace webix {
 			setPage(page:number):void;
 			show(force?:boolean, animation?:boolean):void;
 			showItem(id:string|number):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -9368,7 +9482,7 @@ declare namespace webix {
 			xCount?: number;
 			yCount?: number;
 		}
-		type menuEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMenuItemClick'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
+		type menuEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMenuItemClick'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
 		class menu implements webix.ui.baseview{
 			add(obj:obj, index?:number):string|number;
 			addCss(id:string|number, css:string, silent?:boolean):void;
@@ -9450,7 +9564,7 @@ declare namespace webix {
 			showItem(id:string|number):void;
 			showMenuItem(id:string|number):void;
 			sizeToContent():void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -9495,7 +9609,6 @@ declare namespace webix {
 			view?: string;
 			align?: string;
 			animate?: boolean|WebixAnimate;
-			attributes?: obj;
 			borderless?: boolean;
 			bottomLabel?: string;
 			bottomPadding?: number;
@@ -9532,7 +9645,6 @@ declare namespace webix {
 			options?: string|any[]|webix.ui.baseview|WebixDataStorage|webix.ui.suggestConfig & {[key: string]: any};
 			placeholder?: string;
 			popup?: string;
-			popupWidth?: number;
 			readonly?: boolean;
 			relatedAction?: string;
 			relatedView?: string;
@@ -9564,7 +9676,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLInputElement;
 			getList():webix.ui.baseview;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
@@ -9621,7 +9733,6 @@ declare namespace webix {
 			view?: string;
 			align?: string;
 			animate?: boolean|WebixAnimate;
-			attributes?: obj;
 			borderless?: boolean;
 			bottomLabel?: string;
 			bottomPadding?: number;
@@ -9656,7 +9767,6 @@ declare namespace webix {
 			options?: string|any[]|webix.ui.baseview|WebixDataStorage|webix.ui.suggestConfig & {[key: string]: any};
 			placeholder?: string;
 			popup?: string;
-			popupWidth?: number;
 			readonly?: boolean;
 			relatedAction?: string;
 			relatedView?: string;
@@ -9909,7 +10019,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLInputElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -9964,7 +10074,7 @@ declare namespace webix {
 			view?: string;
 			animate?: boolean|WebixAnimate;
 			borderless?: boolean;
-			cells?: webix.ui.baseview[];
+			cells?: (webix.ui.baseviewConfig & {[key: string]: any})[];
 			cols?: any[];
 			container?: string|HTMLElement;
 			css?: string|obj;
@@ -10207,7 +10317,7 @@ declare namespace webix {
 			url?: string|WebixCallback|WebixProxy;
 			width?: number;
 		}
-		type pdfviewerEventName ='onAfterLoad'|'onAfterScroll'|'onBeforeLoad'|'onBindRequest'|'onBlur'|'onDestruct'|'onDocumentReady'|'onEnter'|'onFocus'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onPageRender'|'onScaleChange'|'onSwipeX'|'onSwipeY'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onViewResize'|'onViewShow';
+		type pdfviewerEventName ='onAfterLoad'|'onBeforeLoad'|'onBindRequest'|'onBlur'|'onDestruct'|'onDocumentReady'|'onEnter'|'onFocus'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onPageRender'|'onScaleChange'|'onSwipeX'|'onSwipeY'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onViewResize'|'onViewShow';
 		class pdfviewer implements webix.ui.baseview{
 			adjust():void;
 			attachEvent(type:pdfviewerEventName, functor:WebixCallback, id?:string):string|number;
@@ -10246,6 +10356,7 @@ declare namespace webix {
 			zoomIn():void;
 			zoomOut():void;
 		
+			$customPrint: WebixCallback;
 			$getSize(dx?:number, dy?:number):any[];
 			$height: number;
 			$numPages: number;
@@ -10266,6 +10377,7 @@ declare namespace webix {
 			borderless?: boolean;
 			chart?: webix.ui.chartConfig & {[key: string]: any};
 			compact?: boolean;
+			config?: boolean;
 			container?: string|HTMLElement;
 			css?: string|obj;
 			datatable?: webix.ui.datatableConfig & {[key: string]: any};
@@ -10286,7 +10398,7 @@ declare namespace webix {
 			mode?: string;
 			on?: EventHash;
 			operations?: WebixPivotOperationsConfig;
-			override?: any[];
+			override?: Map<any, any>;
 			predicates?: obj;
 			readonly?: boolean;
 			structure?: WebixPivotStructure;
@@ -10518,6 +10630,7 @@ declare namespace webix {
 			height?: number;
 			hidden?: boolean;
 			id?: string|number;
+			item?: WebixItemType|string;
 			keyPressTimeout?: number;
 			map?: WebixDataMap;
 			maxHeight?: number;
@@ -10535,6 +10648,7 @@ declare namespace webix {
 			scrollSpeed?: string;
 			template?: string|WebixCallback;
 			tooltip?: string|boolean|WebixCallback|WebixAutoTooltipConfig;
+			type?: WebixItemType|string;
 			url?: string|WebixCallback|WebixProxy;
 			width?: number;
 		}
@@ -10683,12 +10797,13 @@ declare namespace webix {
 			minHeight?: number;
 			minWidth?: number;
 			on?: EventHash;
-			override?: any[];
+			override?: Map<any, any>;
 			simple?: boolean;
+			type?: string;
 			value?: WebixQueryValue;
 			width?: number;
 		}
-		type queryEventName ='onAfterScroll'|'onBlur'|'onChange'|'onDestruct'|'onEnter'|'onFocus'|'onInit'|'onLongTouch'|'onSwipeX'|'onSwipeY'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onViewResize'|'onViewShow';
+		type queryEventName ='onChange'|'onDestruct'|'onInit'|'onLongTouch'|'onSwipeX'|'onSwipeY'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onViewResize'|'onViewShow';
 		class query implements webix.ui.baseview{
 			adjust():void;
 			app(app:obj):void;
@@ -10802,7 +10917,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLInputElement;
 			getNode():HTMLElement;
 			getOption(id:string|number):obj;
 			getParentView():webix.ui.baseview;
@@ -10983,7 +11098,7 @@ declare namespace webix {
 			setFrameRange(range:WebixRangechartRange):void;
 			show(force?:boolean, animation?:boolean):void;
 			showSeries(index:number):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -11017,7 +11132,6 @@ declare namespace webix {
 			view?: string;
 			align?: string;
 			animate?: boolean|WebixAnimate;
-			attributes?: obj;
 			borderless?: boolean;
 			bottomLabel?: string;
 			bottomPadding?: number;
@@ -11081,7 +11195,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLInputElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -11205,7 +11319,7 @@ declare namespace webix {
 			mode?: string;
 			moduleId?: string;
 			on?: EventHash;
-			override?: any[];
+			override?: Map<any, any>;
 			readonly?: boolean;
 			toolbar?: boolean;
 			url?: string;
@@ -11258,7 +11372,6 @@ declare namespace webix {
 			view?: string;
 			align?: string;
 			animate?: boolean|WebixAnimate;
-			attributes?: obj;
 			borderless?: boolean;
 			bottomLabel?: string;
 			bottomPadding?: number;
@@ -11293,7 +11406,6 @@ declare namespace webix {
 			options?: string|any[]|webix.ui.baseview|WebixDataStorage|webix.ui.suggestConfig & {[key: string]: any};
 			placeholder?: string;
 			popup?: string;
-			popupWidth?: number;
 			readonly?: boolean;
 			relatedAction?: string;
 			relatedView?: string;
@@ -11580,7 +11692,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLInputElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -11632,7 +11744,6 @@ declare namespace webix {
 			view?: string;
 			align?: string;
 			animate?: boolean|WebixAnimate;
-			attributes?: obj;
 			borderless?: boolean;
 			bottomLabel?: string;
 			bottomPadding?: number;
@@ -11694,7 +11805,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():null;
 			getNode():HTMLElement;
 			getOption(id:string|number):obj;
 			getParentView():webix.ui.baseview;
@@ -11811,7 +11922,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLInputElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -11915,7 +12026,7 @@ declare namespace webix {
 			url?: string|WebixCallback|WebixProxy;
 			width?: number;
 		}
-		type sidebarEventName ='onAfterAdd'|'onAfterClose'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterOpen'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onBeforeAdd'|'onBeforeClose'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeOpen'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemCheck'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPartialRender'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
+		type sidebarEventName ='onAfterAdd'|'onAfterClose'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterOpen'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onBeforeAdd'|'onBeforeClose'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeOpen'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemCheck'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPartialRender'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
 		class sidebar implements webix.ui.baseview{
 			add(obj:obj, index?:number):string|number;
 			addCss(id:string|number, css:string, silent?:boolean):void;
@@ -12008,7 +12119,7 @@ declare namespace webix {
 			setState(state:WebixTreeState):void;
 			show(force?:boolean, animation?:boolean):void;
 			showItem(id:string|number):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			toggle():void;
 			unbind():void;
@@ -12147,7 +12258,7 @@ declare namespace webix {
 			dimPastEvents?: boolean;
 			disabled?: boolean;
 			dragCreate?: boolean;
-			dynamic?: string;
+			dynamic?: string | boolean;
 			gravity?: number;
 			height?: number;
 			hidden?: boolean;
@@ -12159,7 +12270,7 @@ declare namespace webix {
 			minWidth?: number;
 			mode?: string;
 			on?: EventHash;
-			override?: any[];
+			override?: Map<any, any>;
 			readonly?: boolean;
 			recurring?: boolean;
 			serverUTC?: boolean;
@@ -12218,7 +12329,6 @@ declare namespace webix {
 			view?: string;
 			align?: string;
 			animate?: boolean|WebixAnimate;
-			attributes?: obj;
 			borderless?: boolean;
 			bottomLabel?: string;
 			bottomPadding?: number;
@@ -12280,7 +12390,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLInputElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -12401,9 +12511,11 @@ declare namespace webix {
 			hidden?: boolean;
 			id?: string|number;
 			liveEditor?: boolean;
+			loadStyles?: boolean;
 			maxHeight?: number;
 			maxWidth?: number;
 			menu?: boolean|any[];
+			methods?: string|any[];
 			minHeight?: number;
 			minWidth?: number;
 			on?: EventHash;
@@ -12420,27 +12532,31 @@ declare namespace webix {
 			sheetTabWidth?: number;
 			strict?: boolean;
 			subbar?: webix.ui.baseviewConfig & {[key: string]: any};
-			toolbar?: string|boolean;
+			toolbar?: string|boolean|obj;
 			type?: string;
 			url?: string|WebixCallback|WebixProxy;
 			width?: number;
+			xssSafe?: boolean;
 		}
-		type spreadsheetEventName ='onAfterConditionSet'|'onAfterLoad'|'onAfterRangeSet'|'onAfterSelect'|'onAfterSheetShow'|'onAfterSpan'|'onAfterSplit'|'onBeforeCommentShow'|'onBeforeConditionSet'|'onBeforeFormatChange'|'onBeforeLoad'|'onBeforeSheetShow'|'onBeforeSpan'|'onBeforeSplit'|'onBeforeValueChange'|'onBindRequest'|'onCellChange'|'onChange'|'onColumnOperation'|'onCommand'|'onCommentHide'|'onComponentInit'|'onContextMenuConfig'|'onDataParse'|'onDataSerialize'|'onDestruct'|'onFormatChange'|'onLoadError'|'onMathRefresh'|'onReset'|'onRowOperation'|'onSheetAdd'|'onSheetRemove'|'onSheetRename'|'onStyleSet'|'onUIEditStart'|'onUIEditStop'|'onViewInit'|'onViewShow';
+		type spreadsheetEventName ='onAfterConditionSet'|'onAfterLoad'|'onAfterRangeSet'|'onAfterSelect'|'onAfterSheetShow'|'onAfterSpan'|'onAfterSplit'|'onBeforeCommentShow'|'onBeforeConditionSet'|'onBeforeFormatChange'|'onBeforeLoad'|'onBeforeSheetMenu'|'onBeforeSheetShow'|'onBeforeSpan'|'onBeforeSplit'|'onBeforeStyleChange'|'onBeforeValueChange'|'onBindRequest'|'onCellChange'|'onChange'|'onColumnInit'|'onColumnOperation'|'onCommand'|'onCommentHide'|'onComponentInit'|'onContextMenuConfig'|'onDataParse'|'onDataSerialize'|'onDestruct'|'onFormatChange'|'onLoadError'|'onMathRefresh'|'onReset'|'onRowOperation'|'onSheetAdd'|'onSheetRemove'|'onSheetRename'|'onStyleChange'|'onStyleSet'|'onUIEditStart'|'onUIEditStop'|'onUndo'|'onViewInit'|'onViewShow'|'onZoom';
 		class spreadsheet implements webix.ui.baseview{
-			addImage(rowId:number, columnId:number, url:string):void;
+			addCheckbox(range:obj):void;
+			addFormat(format:string):string;
+			addImage(rowId:number, columnId:number, url:string, page?:string):void;
+			addRadio(range:obj):void;
 			addSheet(content?:WebixSpreadsheetSheetContent, name?:string, show?:boolean):void;
-			addSparkline(rowId:number, columnId:number, config:WebixSpreadsheetSparklineConfig):void;
-			addStyle(styleProps:WebixSpreadsheetStyleProps, baseStyle:WebixSpreadsheetStyle):void;
+			addSparkline(rowId:number, columnId:number, config:WebixSpreadsheetSparklineConfig, page?:string):void;
+			addStyle(styleProps:WebixSpreadsheetStyleProps, baseStyle?:WebixSpreadsheetStyle, page?:string):void;
 			adjust():void;
 			alert(config:WebixSpreadsheetAlertConfig):Promise<any>;
 			attachEvent(type:spreadsheetEventName, functor:WebixCallback, id?:string):string|number;
 			bind(source:WebixBindSource, rule?:WebixCallback, format?:string):void;
 			blockEvent():void;
 			callEvent(name:string, params:any[]):boolean;
-			changeDecimals(row:number, column:number, change:number):void;
-			clearRange(rangeStr?:string, type?:WebixSpreadsheetRangeClearConfig):void;
+			changeDecimals(row:number, column:number, change:number, page?:string):void;
+			clearRange(rangeStr?:string, type?:WebixSpreadsheetRangeClearConfig, page?:string):void;
 			clearSheet():void;
-			combineCells(range?:WebixSpreadsheetCellRangeConfig):void;
+			combineCells(range?:WebixSpreadsheetCellRangeConfig, page?:string):void;
 			compactStyles():void;
 			confirm(config:WebixSpreadsheetConfirmConfig):Promise<any>;
 			define(property:string|webix.ui.baseviewConfig & {[key: string]: any}, value?:any):void;
@@ -12453,51 +12569,58 @@ declare namespace webix {
 			editSheet(name:string):void;
 			enable():void;
 			filterSpreadSheet():void;
-			freezeColumns(columns:number):void;
-			freezeRows(rows:number):void;
+			freezeColumns(columns:number, page?:string):void;
+			freezeRows(rows:number, page?:string):void;
 			getActiveSheet():string;
-			getCellEditor(row:number, column:number):WebixSpreadsheetCellEditorConfig;
-			getCellFilter(row:number, column:number):WebixSpreadsheetCellFilterExtendedConfig;
+			getCellEditor(row:number, column:number, page?:string):WebixSpreadsheetCellEditorConfig;
+			getCellFilter(row:number, column:number, page?:string):WebixSpreadsheetCellFilterExtendedConfig;
+			getCellType(row:number, column:number, page?:string):string;
 			getCellValue(row:number, column:number, math:boolean, page:string):string;
 			getChildViews():webix.ui.baseview[];
-			getColumn(id:string):WebixDatatableColumn;
+			getColumn(id:string, page?:string):WebixDatatableColumn;
 			getFormView():webix.ui.baseview;
+			getFormat(row:number, column:number, page?:string):obj;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getRangeValue(range:string, page:string):any[];
-			getRow(id:string):obj;
+			getRow(id:string, page?:string):obj;
 			getSelectedId(asArray:boolean):any;
 			getSelectedRange():string;
 			getSheetData(sheet_name:string):void;
 			getSheetState(name:string):string;
-			getStyle(row:number, column:number):obj;
+			getStyle(row:number, column:number, page?:string):obj;
 			getTopParentView():webix.ui.baseview;
 			groupUndo(func:WebixCallback):void;
 			hasEvent(name:string):boolean;
 			hide():void;
-			hideColumn(columnId:number, state:boolean):void;
-			hideGridlines(state:boolean|string):void;
-			hideHeaders(state:boolean|string):void;
-			hideRow(rowId:number, state:boolean):void;
+			hideColumn(columnId:number, state:boolean, page?:string):void;
+			hideGridlines(state:boolean|string, page?:string):void;
+			hideHeaders(state:boolean|string, page?:string):void;
+			hideRow(rowId:number, state:boolean, page?:string):void;
 			ignoreUndo(func:WebixCallback):void;
 			innerId(id:number|string):number|string;
 			insertColumn(columnId:number|any[]):void;
 			insertRow(rowId:number|any[]):void;
-			isCellLocked(rowId:number, columnId:number):boolean;
+			isCellLocked(rowId:number, columnId:number, page?:string):boolean;
 			isColumnVisible(columnId:number):boolean;
 			isEnabled():boolean;
 			isRowVisible(rowId:number):boolean;
 			isVisible():boolean;
 			load(url:string, type?:string, callback?:WebixCallback):Promise<any>;
-			lockCell(row:number|WebixCellObject, column:number|WebixCellObject, state?:boolean):void;
+			lockCell(row:number|WebixCellObject, column:number|WebixCellObject, state?:boolean, page?:string):void;
 			mapEvent(map:WebixEventMap):void;
+			markCheckbox(row:number, column:number):void;
+			markRadio(row:number, column:number):void;
 			parse(data:Promise<any>|string|any[]|obj, type?:string, clear?:boolean):void;
+			posToRef(row1:number, row2:number, column1:number, column2:number, sheet:string):string;
 			queryView(config:webix.ui.baseviewConfig & {[key: string]: any}|WebixCallback|string, mode?:string):any;
 			recalculate():void;
 			redo():void;
+			refToPos(ref:string):any[];
 			refresh():void;
-			registerMathMethod(name:string, handler:WebixCallback):void;
-			removeFilters():void;
+			registerMathMethod(name:string, handler:WebixCallback, category:string, generateHTML:boolean):void;
+			removeFilters(page?:string):void;
+			removeFormat(rowId:number, columnId:number, page?:string):void;
 			removeSheet(name:string):void;
 			renameSheet(name:string, newName:string):void;
 			reset():void;
@@ -12505,29 +12628,30 @@ declare namespace webix {
 			resize():void;
 			saveCell(row:number, column:number):void;
 			serialize(options?:WebixSpreadsheetSerializeConfig):obj;
-			setCellEditor(rowId:number, columnId:number, editorObject:WebixSpreadsheetCellEditorConfig):void;
-			setCellFilter(rowId:number, columnId:number, filterObject:WebixSpreadsheetCellFilterConfig):void;
+			setCellEditor(rowId:number, columnId:number, editorObject:WebixSpreadsheetCellEditorConfig, page?:string):void;
+			setCellFilter(rowId:number, columnId:number, filterObject:WebixSpreadsheetCellFilterConfig, page?:string):void;
 			setCellValue(row:number, column:number, value:string, page:string):void;
-			setColumnWidth(id:string|number|any[], width:number|string):void;
-			setFormat(rowId:number, columnId:number, format:string):void;
+			setColumnWidth(id:string|number|any[], width:number|string, page?:string):void;
+			setFormat(rowId:number, columnId:number, format:string, page?:string):string;
+			setFormatName(rowId:number, columnId:number, name:string, page?:string):void;
 			setPlaceholder(placeholder:obj|string, value?:number|string):void;
-			setRangeStyle(rangeStr:string, style:WebixSpreadsheetStyle):void;
+			setRangeStyle(rangeStr:string, style:WebixSpreadsheetStyle, page?:string):void;
 			setRangeValue(range:string, value:any, page:string):void;
-			setRowHeight(id:string|number|any[], height:number|string):void;
+			setRowHeight(id:string|number|any[], height:number|string, page?:string):void;
 			setSheetState(name:string, state:string):void;
-			setStyle(row:number, column:number, style:WebixSpreadsheetStyle):void;
+			setStyle(row:number, column:number, style:WebixSpreadsheetStyle, page?:string):void;
 			show(force?:boolean, animation?:boolean):void;
 			showCell(ref:string, silent:boolean):void;
-			showFormulas(state:boolean|string):void;
+			showFormulas(state:boolean|string, page?:string):void;
 			showPrintBorders(state:boolean|string):void;
 			showSheet(name:string):void;
 			sortRange(range?:string, dir?:string):void;
-			splitCell(row:number, column:number):void;
+			splitCell(row:number, column:number, page?:string):void;
 			ui<T extends webix.ui.baseview>(view:webix.ui.baseviewConfig & {[key: string]: any}):T;
 			unbind():void;
 			unblockEvent():void;
 			undo(id:string):void;
-			zoom(scale:number):void;
+			zoom(scale:number, page?:string):void;
 		
 			$$: webix.ui.baseview;
 			$getSize(dx?:number, dy?:number):any[];
@@ -12543,6 +12667,7 @@ declare namespace webix {
 			config: spreadsheetConfig;
 			name: string;
 			ranges: obj;
+			validation: obj;
 			views: obj;
 		}
 		interface submenuConfig{
@@ -12619,7 +12744,7 @@ declare namespace webix {
 			yCount?: number;
 			zIndex?: number;
 		}
-		type submenuEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeShow'|'onBeforeSort'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onHide'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMenuItemClick'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onSelectChange'|'onShow'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewMove'|'onViewMoveEnd'|'onViewResize'|'onViewShow';
+		type submenuEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeShow'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onHide'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMenuItemClick'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onSelectChange'|'onShow'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewMove'|'onViewMoveEnd'|'onViewResize'|'onViewShow';
 		class submenu implements webix.ui.baseview{
 			add(obj:obj, index?:number):string|number;
 			addCss(id:string|number, css:string, silent?:boolean):void;
@@ -12703,7 +12828,7 @@ declare namespace webix {
 			showItem(id:string|number):void;
 			showMenuItem(id:string|number):void;
 			sizeToContent():void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -12848,7 +12973,6 @@ declare namespace webix {
 			view?: string;
 			align?: string;
 			animate?: boolean|WebixAnimate;
-			attributes?: obj;
 			badge?: number|string;
 			borderless?: boolean;
 			bottomLabel?: string;
@@ -12916,7 +13040,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLButtonElement|HTMLInputElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -12969,12 +13093,12 @@ declare namespace webix {
 			view?: string;
 			align?: string;
 			animate?: boolean|WebixAnimate;
-			attributes?: obj;
 			borderless?: boolean;
 			bottomLabel?: string;
 			bottomOffset?: number;
 			bottomPadding?: number;
 			click?: WebixCallback;
+			close?: boolean;
 			container?: string|HTMLElement;
 			css?: string|obj;
 			disabled?: boolean;
@@ -13043,7 +13167,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():null;
 			getNode():HTMLElement;
 			getOption(id:string|number):obj;
 			getParentView():webix.ui.baseview;
@@ -13317,7 +13441,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLInputElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -13429,7 +13553,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLTextAreaElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -13547,7 +13671,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLInputElement|HTMLTextAreaElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -13761,7 +13885,7 @@ declare namespace webix {
 			serialize(all?:boolean):any[];
 			show(force?:boolean, animation?:boolean):void;
 			showItem(id:string|number):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -13809,7 +13933,7 @@ declare namespace webix {
 			minHeight?: number;
 			minWidth?: number;
 			on?: EventHash;
-			override?: any[];
+			override?: Map<any, any>;
 			projects?: any[];
 			readonly?: boolean;
 			url?: string;
@@ -13912,7 +14036,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLButtonElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -14169,7 +14293,7 @@ declare namespace webix {
 			url?: string|WebixCallback|WebixProxy;
 			width?: number;
 		}
-		type treeEventName ='onAfterAdd'|'onAfterClose'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterOpen'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onBeforeAdd'|'onBeforeClose'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeOpen'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemCheck'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPartialRender'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
+		type treeEventName ='onAfterAdd'|'onAfterClose'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterOpen'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onBeforeAdd'|'onBeforeClose'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeOpen'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemCheck'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPartialRender'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
 		class tree implements webix.ui.baseview{
 			add(obj:obj, index?:number, parentId?:string):string;
 			addCss(id:string|number, css:string, silent?:boolean):void;
@@ -14257,7 +14381,7 @@ declare namespace webix {
 			setState(state:WebixTreeState):void;
 			show(force?:boolean, animation?:boolean):void;
 			showItem(id:string|number):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -14358,7 +14482,7 @@ declare namespace webix {
 			value?: string|WebixCallback;
 			width?: number;
 		}
-		type treemapEventName ='onAfterAdd'|'onAfterClose'|'onAfterContextMenu'|'onAfterDelete'|'onAfterLoad'|'onAfterOpen'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onBeforeAdd'|'onBeforeClose'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeLoad'|'onBeforeOpen'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onEnter'|'onFocus'|'onItemCheck'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPartialRender'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
+		type treemapEventName ='onAfterAdd'|'onAfterClose'|'onAfterContextMenu'|'onAfterDelete'|'onAfterLoad'|'onAfterOpen'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onBeforeAdd'|'onBeforeClose'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeLoad'|'onBeforeOpen'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onEnter'|'onFocus'|'onItemCheck'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPartialRender'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
 		class treemap implements webix.ui.baseview{
 			add(obj:obj, index?:number):string|number;
 			addCss(id:string|number, css:string, silent?:boolean):void;
@@ -14440,7 +14564,7 @@ declare namespace webix {
 			show(force?:boolean, animation?:boolean):void;
 			showBranch(branchId:string|number):void;
 			showItem(id:string|number):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -14540,7 +14664,7 @@ declare namespace webix {
 			prerender?: boolean;
 			ready?: WebixCallback;
 			removeMissed?: boolean;
-			resizeColumn?: boolean|WebixResizeRowColConfig;
+			resizeColumn?: boolean|WebixResizeColConfig;
 			resizeRow?: boolean|WebixResizeRowColConfig;
 			rightSplit?: number;
 			rowHeight?: number;
@@ -14568,7 +14692,7 @@ declare namespace webix {
 			width?: number;
 			yCount?: number;
 		}
-		type treetableEventName ='onAfterAdd'|'onAfterAreaAdd'|'onAfterAreaRemove'|'onAfterBlockSelect'|'onAfterClose'|'onAfterColumnDrop'|'onAfterColumnDropOrder'|'onAfterColumnHide'|'onAfterColumnShow'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterEditStart'|'onAfterEditStop'|'onAfterFilter'|'onAfterLoad'|'onAfterOpen'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onAreaDrag'|'onBeforeAdd'|'onBeforeAreaAdd'|'onBeforeAreaRemove'|'onBeforeBlockSelect'|'onBeforeClose'|'onBeforeColumnDrag'|'onBeforeColumnDrop'|'onBeforeColumnDropOrder'|'onBeforeColumnHide'|'onBeforeColumnShow'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeEditStart'|'onBeforeEditStop'|'onBeforeFilter'|'onBeforeLoad'|'onBeforeOpen'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onCheck'|'onCollectValues'|'onColumnGroupCollapse'|'onColumnResize'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEditorChange'|'onEnter'|'onFocus'|'onHeaderClick'|'onItemCheck'|'onItemClick'|'onItemDblClick'|'onItemSingleClick'|'onKeyPress'|'onLiveEdit'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onResize'|'onRowResize'|'onScrollX'|'onScrollY'|'onSelectChange'|'onStructureLoad'|'onStructureUpdate'|'onSubViewClose'|'onSubViewCreate'|'onSubViewOpen'|'onSubViewRender'|'onSwipeX'|'onSwipeY'|'onSyncScroll'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
+		type treetableEventName ='onAfterAdd'|'onAfterAreaAdd'|'onAfterAreaRemove'|'onAfterBlockSelect'|'onAfterClose'|'onAfterColumnDrop'|'onAfterColumnDropOrder'|'onAfterColumnHide'|'onAfterColumnShow'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterEditStart'|'onAfterEditStop'|'onAfterFilter'|'onAfterLoad'|'onAfterOpen'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onAreaDrag'|'onBeforeAdd'|'onBeforeAreaAdd'|'onBeforeAreaRemove'|'onBeforeBlockSelect'|'onBeforeClose'|'onBeforeColumnDrag'|'onBeforeColumnDrop'|'onBeforeColumnDropOrder'|'onBeforeColumnHide'|'onBeforeColumnShow'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeEditStart'|'onBeforeEditStop'|'onBeforeFilter'|'onBeforeLoad'|'onBeforeOpen'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onCheck'|'onCollectValues'|'onColumnGroupCollapse'|'onColumnResize'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEditorChange'|'onEnter'|'onFocus'|'onHeaderClick'|'onItemCheck'|'onItemClick'|'onItemDblClick'|'onItemSingleClick'|'onKeyPress'|'onLiveEdit'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onMoveSelection'|'onPaste'|'onResize'|'onRowResize'|'onScrollX'|'onScrollY'|'onSelectChange'|'onStructureLoad'|'onStructureUpdate'|'onSubViewClose'|'onSubViewCreate'|'onSubViewOpen'|'onSubViewRender'|'onSwipeX'|'onSwipeY'|'onSyncScroll'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
 		class treetable implements webix.ui.baseview{
 			add(obj:obj, index?:number, parentId?:string):string;
 			addCellCss(id:string, name:string, css:string, silent:boolean):void;
@@ -14636,7 +14760,7 @@ declare namespace webix {
 			getIdByIndex(index:number|string):string|number;
 			getIndexById(id:number|string):number;
 			getItem(id:number|string):obj;
-			getItemNode(id:string|number):HTMLElement;
+			getItemNode(id:string|number|WebixDatatableItemPos):HTMLElement;
 			getLastId():number|string;
 			getNextId(id:number|string, step?:number):string|number;
 			getNextSiblingId(id:string|number):string|number;
@@ -14724,7 +14848,7 @@ declare namespace webix {
 			showItem(id:string|number):void;
 			showItemByIndex(index:number):void;
 			showOverlay(message:string):void;
-			sort(by:string|WebixSortConfig, dir?:string, as?:string):void;
+			sort(by:string|WebixSortConfig|WebixSortConfig[]|WebixCallback, dir?:string, as?:string):void;
 			sync(source:WebixBindSource, filter?:WebixCallback, silent?:boolean):void;
 			unbind():void;
 			unblockEvent():void;
@@ -14827,7 +14951,7 @@ declare namespace webix {
 			xCount?: number;
 			yCount?: number;
 		}
-		type unitlistEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onUnits'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
+		type unitlistEventName ='onAfterAdd'|'onAfterContextMenu'|'onAfterDelete'|'onAfterDrop'|'onAfterLoad'|'onAfterRender'|'onAfterScroll'|'onAfterSelect'|'onAfterSort'|'onAfterUnSelect'|'onBeforeAdd'|'onBeforeContextMenu'|'onBeforeDelete'|'onBeforeDrag'|'onBeforeDragIn'|'onBeforeDrop'|'onBeforeDropOut'|'onBeforeLoad'|'onBeforeRender'|'onBeforeSelect'|'onBeforeSort'|'onBeforeUnSelect'|'onBindRequest'|'onBlur'|'onDataRequest'|'onDataUpdate'|'onDestruct'|'onDragOut'|'onEnter'|'onFocus'|'onItemClick'|'onItemDblClick'|'onItemRender'|'onItemSingleClick'|'onKeyPress'|'onLoadError'|'onLongTouch'|'onMouseMove'|'onMouseMoving'|'onMouseOut'|'onPaste'|'onSelectChange'|'onSwipeX'|'onSwipeY'|'onTabFocus'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onUnits'|'onValidationError'|'onValidationSuccess'|'onViewResize'|'onViewShow';
 		class unitlist implements webix.ui.baseview{
 			add(obj:obj, index?:number):string|number;
 			addCss(id:string|number, css:string, silent?:boolean):void;
@@ -14990,7 +15114,7 @@ declare namespace webix {
 		}
 		type uploaderEventName ='onAfterFileAdd'|'onAfterRender'|'onAfterScroll'|'onBeforeFileAdd'|'onBeforeRender'|'onBindRequest'|'onBlur'|'onDestruct'|'onEnter'|'onFileUpload'|'onFileUploadError'|'onFocus'|'onItemClick'|'onKeyPress'|'onLongTouch'|'onSwipeX'|'onSwipeY'|'onTimedKeyPress'|'onTouchEnd'|'onTouchMove'|'onTouchStart'|'onUploadComplete'|'onViewResize'|'onViewShow';
 		class uploader implements webix.ui.baseview{
-			addDropZone(element:HTMLElement):void;
+			addDropZone(element:HTMLElement, hover_text:string):void;
 			addFile(name:string|WebixFileObject, size?:number, type?:string):void;
 			adjust():void;
 			attachEvent(type:uploaderEventName, functor:WebixCallback, id?:string):string|number;
@@ -15007,7 +15131,7 @@ declare namespace webix {
 			focus():void;
 			getChildViews():webix.ui.baseview[];
 			getFormView():webix.ui.baseview;
-			getInputNode():HTMLElement;
+			getInputNode():HTMLButtonElement;
 			getNode():HTMLElement;
 			getParentView():webix.ui.baseview;
 			getTopParentView():webix.ui.baseview;
@@ -15074,7 +15198,7 @@ declare namespace webix {
 			minHeight?: number;
 			minWidth?: number;
 			on?: EventHash;
-			override?: any[];
+			override?: Map<any, any>;
 			roles?: boolean;
 			url?: string;
 			width?: number;

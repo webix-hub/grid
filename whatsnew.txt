@@ -1,5 +1,41 @@
 Check the full list of changes at https://grid.webix.com/docs/whats-new/
 
+Version 11.4 (April 2026)
+=============================
+
+### Major features
+
+- Area selection: Ctrl+drag multi-area selection for end users
+
+### Fixes
+
+- Regression: `setState` now restores column state on the first call even when column order differs
+- Columns reused from the grid's own config via `define`/`refreshColumns` now render properly
+- Multi-area selection borders no longer disappear on the split side when selection crosses a split boundary
+- Date-specific filters and editors with Calendar: ISO week numbers are now computed correctly across time zones and DST transitions
+- Touch: swipe action on the empty area under data rows could throw an error
+- Styling: unified colors of frozen column borders (headers and data)
+
+Version 11.3.3 (March 2026)
+=============================
+
+_This version is released in compliance with all Webix packages; while the core UI library was updated, no Grid-specific changes were made_
+
+Version 11.3.2 (March 2026)
+=============================
+
+_This version is released in compliance with all Webix packages; while the core UI library was updated, no Grid-specific changes were made_
+
+Version 11.3.1 (February 2026)
+=============================
+
+### Fixes
+
+- Row resizing fails when column resizer icons are enabled
+- Template renders with incorrect index after certain repaints
+- Corrected redrawing of merged cells on touch devices
+- Export to Excel: frozen columns were exported incorrectly when using the `ignore` option
+
 Version 11.3 (December 2025)
 =============================
 
@@ -13,8 +49,26 @@ Version 11.3 (December 2025)
 - Custom Scroll on Firefox, Windows: footer could overlap the horizontal scrollbar
 - Custom Scroll on Firefox, Windows: scrollbar areas overlapped the data, preventing selection in the corners
 - Enhanced IME support for filters
+
+Version 11.2.3 (November 2025)
+=============================
+
+### Fixes
+
 - better adjustment of `autowidth` for Label component in filters and editors.
+
+Version 11.2.2 (October 2025)
+=============================
+
+### Fixes
+
 - regression: dynamic rendering on touch devices failed after scroll
+
+Version 11.2.1 (October 2025)
+=============================
+
+### Fixes
+
 - regression: modifying columns directly and calling `refreshColumns` without an explicit array with columns caused TypeError
 - `refreshColumns` and `scrollTo` methods caused an error when called together on a hidden Grid
 - Willow and Dark skins: incorrect font-weight for resizer icons

@@ -15,21 +15,44 @@ const api = {
 		max: 100,
 		value: [20,80],
 		template:function(obj, common){
-			var id = "x" + uid();
+			const id = "x" + uid();
 			common._handle_id = [id+"_0",id+"_1"];
 
-			var aria = "role='slider' aria-label='"+obj.label+(obj.title?(" "+obj.title(obj)):"")+"' aria-valuemax='"+obj.max+"' aria-valuemin='"+obj.min+"' tabindex='0'";
-			var handles = "<div class='webix_slider_handle webix_slider_handle_0' "+/*@attr*/"webix_disable_drag"+"='true' id='"+common._handle_id[0]+"' "+aria+" aria-valuenow='"+obj.value[0]+"'>&nbsp;</div>";
+			const aria = "role='slider' aria-label='"+obj.label+(obj.title?(" "+obj.title(obj)):"")+"' aria-valuemax='"+obj.max+"' aria-valuemin='"+obj.min+"' tabindex='0'";
+			let handles = "<div class='webix_slider_handle webix_slider_handle_0' "+/*@attr*/"webix_disable_drag"+"='true' id='"+common._handle_id[0]+"' "+aria+" aria-valuenow='"+obj.value[0]+"'>&nbsp;</div>";
 			handles += "<div class='webix_slider_handle webix_slider_handle_1' "+/*@attr*/"webix_disable_drag"+"='true' id='"+common._handle_id[1]+"' "+aria+" aria-valuenow='"+obj.value[1]+"'>&nbsp;</div>";
 
-			var title = "<div class='webix_slider_title"+(obj.moveTitle?" webix_slider_move":"")+"'"+(!obj.moveTitle && obj.vertical?(" style='line-height:"+(obj.aheight-common._sliderPadding-obj.inputPadding*2)+"px;'"):"")+">&nbsp;</div>";
-			if(obj.moveTitle)
-				title = "<div class='webix_slider_title_box'>"+(title+title)+"</div>";
+			const bothTitles = obj.axisTitles && obj.title;
+			let titleCss = "";
+			let titleStyle = "";
+			let movingTitleStyle = "";
+			if (obj.vertical){
+				const width = `width:${typeof obj.titleWidth === "number" ? `${obj.titleWidth}px` : "auto"};`;
+				titleStyle += width;
+				if (bothTitles) {
+					titleCss = " webix_slider_title_left";
+					movingTitleStyle += width;
+				}
+				if (!obj.moveTitle) {
+					titleStyle += `line-height:${obj.aheight - common._sliderPadding - obj.inputPadding * 2}px;`;
+				}
+			}
 			
-			var parts = "<div class='webix_slider_right'>&nbsp;</div><div class='webix_slider_left'></div>";
-			var html = "";
-			if(obj.vertical) html = "<div class='webix_slider_box'>"+parts+handles+"</div>"+title;
-			else html = title+"<div class='webix_slider_box'>"+parts+handles+"</div>";
+			let title = `<div class="webix_slider_title${obj.moveTitle ? " webix_slider_move" : ""}${titleCss}"${titleStyle ? ` style="${titleStyle}"` : ""}>&nbsp;</div>`;
+			if (obj.moveTitle)
+				title = `<div class="webix_slider_title_box${titleCss}"${movingTitleStyle ? ` style="${movingTitleStyle}"` : ""}>${(title+title)}</div>`;
+			
+			const parts = "<div class='webix_slider_right'>&nbsp;</div><div class='webix_slider_left'></div>";
+			let html = "";
+			
+			let axisTitles = obj.axisTitles ? common._set_axis_titles(obj) : "";
+			if (obj.vertical) {
+				html = `<div class="webix_slider_vertical_wrap"><div class="webix_slider_box">${parts}${handles}</div>${axisTitles}</div>`;
+				html = bothTitles ? `${title}${html}` : `${html}${title}`;
+			} else {
+				html = title+"<div class='webix_slider_box'>"+parts+handles+axisTitles+"</div>";
+			}
+			
 			return common.$renderInput(obj, html, id);
 		}
 	},
@@ -91,8 +114,10 @@ const api = {
 		if (handle0){
 			sizeStr = config.vertical?"height":"width";
 			cornerStr = config.vertical?"top":"left";
+
+			const contHeight = this._get_content_height();
 			
-			size = config.vertical?this._content_height:this._get_input_width(config);
+			size = config.vertical ? contHeight : this._get_input_width(config);
 			max = size - this._sliderPadding * 2 - 2 * this._sliderBorder;
 			
 			left0 = this._get_left_pos(size, 0);
@@ -123,13 +148,11 @@ const api = {
 	_set_title:function(handle0, left, max, cornerStr){
 		var config = this._settings;
 		if (this._settings.title){
-			var box = handle0.parentNode;
-			var sibling = config.vertical?"nextSibling":"previousSibling";
+			const title = this.$view.querySelectorAll(".webix_slider_title");
 
 			if(!config.moveTitle)
-				box[sibling].innerHTML = this._settings.title(this._settings, this);
+				title[0].innerHTML = this._settings.title(this._settings, this);
 			else{ //two independent titles
-				var title = box[sibling].childNodes;
 				var pos = [];
 				for(let i = 0; i<2; i++)
 					pos.push(this._set_title_n(title[i], config.value[i], left[i], max, cornerStr, i));
@@ -137,8 +160,6 @@ const api = {
 				//correct for overlapping titles
 				var diff = config.vertical? (pos[0]-pos[1]-this._sliderHandleWidth) : (pos[1]-pos[0]);
 				var sizeStr  = config.vertical?"clientHeight":"clientWidth";
-
-				
 
 				if(title[0][sizeStr]/2+title[1][sizeStr]/2 > diff)
 					this._hide_title(title, isUndefined(this._activeIndex) ? 0 : (this._activeIndex ? 0 : 1));
@@ -195,47 +216,50 @@ const api = {
 		hActive.focus();
 	},
 	_get_value_from_pos:function(pos){
-		var config = this._settings;
-		var value = config.value;
-		//10 - padding of slider box
-		var max = config.max - config.min;
-		var ax = config.vertical?"y":"x";
+		const config = this._settings;
+		const value = config.value;
+		const max = config.max;
+		const min = config.min;
+		const delta = max - min;
+		const ax = config.vertical ? "y" : "x";
 
-		var left = offset(this._get_slider_handle().parentNode)[ax];
-		var newvalue = Math.ceil((pos-left) * max / (config.vertical?this._content_height:this._get_input_width(config)));
-		newvalue = Math.round((newvalue + 1*config.min)/config.step) * config.step;
-		if(config.vertical)
-			newvalue = max-newvalue;
-
-		var index = null;
-		var pos0 = offset(this._get_slider_handle(0))[ax];
-		var pos1 = offset(this._get_slider_handle(1))[ax];
-
-		if(pos0==pos1 && (config.value[0] == config.min || config.value[0] == config.max) ){
-			this._activeIndex = index = (config.value[0] == config.min?1:0);
-			this._set_handle_active(index);
+		const left = offset(this._get_slider_handle().parentNode)[ax];
+		const contHeight = this._get_content_height();
+		let newvalue;
+		if (config.vertical) {
+			const fullPxHeight = contHeight - 2 * this._sliderPadding - 2 /*borders*/;
+			newvalue = Math.ceil((pos - left - this._sliderPadding) * delta / fullPxHeight);
+			newvalue = delta - Math.round((newvalue - config.min) / config.step) * config.step;
+		} else {
+			newvalue = Math.ceil((pos - left) * delta / this._get_input_width(config));
+			newvalue = Math.round((newvalue + config.min) / config.step) * config.step;
 		}
-		else{
-			if(this._activeIndex >=0){
+
+		let index = null;
+		const pos0 = offset(this._get_slider_handle(0))[ax];
+		const pos1 = offset(this._get_slider_handle(1))[ax];
+
+		if (pos0 == pos1 && (config.value[0] == config.min || config.value[0] == config.max) ){
+			this._activeIndex = index = (config.value[0] == config.min ? 1 : 0);
+			this._set_handle_active(index);
+		} else {
+			if (this._activeIndex >= 0) {
 				index = this._activeIndex;
-			}else{
-				if(pos0==pos1){
-					index = (pos < pos0?0:1);
-				}
-				else{
-					var dist0 = Math.abs(pos0-pos);
-					var dist1 = Math.abs(pos1-pos);
-					index = dist0<dist1?0:1;
+			} else {
+				if (pos0 == pos1) {
+					index = (pos < pos0 ? 0 : 1);
+				} else{
+					const dist0 = Math.abs(pos0 - pos);
+					const dist1 = Math.abs(pos1 - pos);
+					index = dist0 < dist1 ? 0 : 1;
 					this._activeIndex = index;
 				}
 			}
 		}
 
-
-		if(index){
+		if (index) {
 			value[index] = this._safeValue(newvalue, value[0], config.max);
-		}
-		else{
+		} else {
 			value[index] = this._safeValue(newvalue, config.min, value[1]);
 		}
 
